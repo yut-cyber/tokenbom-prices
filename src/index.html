@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="TokenBom 模型价格榜 · 月成本估算（单文件纯前端工具）">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%8A%3C/text%3E%3C/svg%3E">
+<title>TokenBom 模型价格榜 · 月成本估算</title>
+<style>/*__INLINE_CSS__*/</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div>
+    <h1><a href="https://tokenbom.com/dashboard" target="_blank" rel="noopener">TokenBom</a> 模型价格榜 · 月成本估算</h1>
+    <div class="status" id="data-status">加载中…</div>
+  </div>
+  <div class="actions">
+    <button class="primary" id="btn-refresh">🔄 拉取最新价格</button>
+    <button id="btn-csv">⬇ 下载 CSV</button>
+    <button id="btn-md">⧉ 复制 Markdown</button>
+  </div>
+</header>
+
+<section class="card">
+  <div class="params">
+    <span class="param"><label>积分售价</label>¥<input type="number" id="creditPrice" step="0.01" min="0"> / 100 积分</span>
+    <span class="param"><label>美元汇率</label>1$ = ¥<input type="number" id="fx" step="0.1" min="0"></span>
+    <span class="param"><label>官方 Opus 5 单价($/M)</label>输入 $<input type="number" id="offin" step="0.5" min="0"> 输出 $<input type="number" id="offout" step="0.5" min="0"></span>
+    <span class="param"><label>月锚点花费</label>$<input type="number" id="budget" step="50" min="0"></span>
+    <span class="param"><label>输入:输出</label><input type="range" id="ratio" min="1" max="20" step="0.5"><span class="ratio-val" id="ratio-label"></span></span>
+    <span class="param"><button id="btn-reset">恢复默认</button></span>
+  </div>
+  <div class="stats" id="stats"></div>
+</section>
+
+<section class="card filters">
+  <input type="text" id="search" placeholder="🔍 搜索模型名…">
+  <select id="avail">
+    <option value="all">全部状态</option>
+    <option value="available">仅可用</option>
+    <option value="needs_supply">仅缺供应</option>
+    <option value="verifying">仅验证中</option>
+  </select>
+  <label><input type="checkbox" id="hidesunset">隐藏将下线模型</label>
+  <span class="count" id="count"></span>
+</section>
+
+<section class="card hidden" id="paste-panel">
+  <h2>⚠️ 浏览器拦截了跨域请求（CORS），改用手动更新（约 10 秒）</h2>
+  <ol>
+    <li><a href="#" id="open-api" target="_blank" rel="noopener">点这里在新标签页打开 API 数据页</a></li>
+    <li>在那一页 <b>Ctrl+A 全选 → Ctrl+C 复制</b></li>
+    <li>回到本页，点「从剪贴板读取」，或直接在下面 Ctrl+V 后点「解析」</li>
+  </ol>
+  <textarea id="paste-box" placeholder='粘贴 JSON，形如 {"models":[...]}` 或直接 `[ {...} ]`'></textarea>
+  <div class="paste-row">
+    <button class="primary" id="btn-clip">📋 从剪贴板读取</button>
+    <button id="btn-parse">解析并更新</button>
+    <button id="btn-restore">恢复内嵌快照</button>
+    <span class="err hidden" id="paste-err"></span>
+  </div>
+</section>
+
+<div class="card table-wrap">
+  <table id="tbl">
+    <thead><tr>
+      <th class="l">#</th>
+      <th class="l sortable" data-key="model">模型 <span class="arrow"></span></th>
+      <th class="sortable" data-key="in">输入 ¥/M <span class="arrow"></span></th>
+      <th class="sortable" data-key="out">输出 ¥/M <span class="arrow"></span></th>
+      <th class="sortable" data-key="blended">混合 ¥/M <span class="arrow"></span></th>
+      <th class="sortable" data-key="monthly">预计月成本(¥) <span class="arrow"></span></th>
+      <th title="相对你每月官方账单（月锚点）的增减">对比官方账单</th>
+      <th class="l">上下文 / 能力</th>
+    </tr></thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<section class="card hidden" id="percall">
+  <h2>按次计费模型（不参与按 token 的月成本估算）</h2>
+  <div id="percall-body"></div>
+</section>
+
+<footer id="assumptions"></footer>
+
+</div>
+<div id="toast"></div>
+
+<script type="application/json" id="snapshot-json">/*__INLINE_DATA__*/</script>
+<script>/*__INLINE_JS__*/</script>
+</body>
+</html>

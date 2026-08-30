@@ -1,0 +1,15 @@
+{
+  "name": "tokenbom-prices",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "TokenBom 模型价格榜 · 月成本估算（单文件纯前端工具）",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node --test",
+    "check": "node --check src/app.js && node --check src/calc.mjs && node --check scripts/build.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
