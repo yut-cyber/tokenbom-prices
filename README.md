@@ -18,9 +18,9 @@ A single-file, zero-dependency web tool that converts TokenBom's credit-based mo
 
 ## 功能特性
 
-- **月成本估算**：以你的官方 API 月账单为锚点，按输入:输出比反推月用量，估算同样的 token 量在各模型上的月花费
-- **对比官方账单**：每个模型直观显示相对官方账单的增减百分比（锚点模型金色高亮）
-- **积分 → 人民币**：积分单价、美元汇率、官方单价全部可调，实时重算
+- **月成本估算**：填入你的模型月用量（按 4:1 拆分输入/输出），直接算出各模型的月花费
+- **对比现行花费**：每个模型直观显示相对你现行月花费的增减百分比（未填写时显示「—」）
+- **积分 → 人民币**：积分售价档位一键切换（¥0.20/0.18/0.16/0.14 每 100 积分），汇率固定 7.2，实时重算
 - **模型能力标签**：上下文长度、视觉、工具调用、推理、PDF、提示缓存、输出速度（tps）
 - **筛选与排序**：按模型名搜索、按可用状态筛选、点击表头按任意价格列排序
 - **导出**：下载 CSV（Excel 友好，UTF-8 BOM）、复制 Markdown 表格
@@ -35,17 +35,16 @@ A single-file, zero-dependency web tool that converts TokenBom's credit-based mo
 
 ## 计算口径
 
-设 `creditPrice`（¥/100积分）、`fx`（汇率）、`officialIn/officialOut`（官方 $/M 输入/输出）、`budget`（月锚点花费 $）、`ratio`（输入:输出）：
+设 `creditPrice`（所选档位 ¥/100积分）、`monthlyTokens`（你的模型月总用量，M tokens）、`currentSpend`（现行月花费 ¥）。汇率固定 7.2，输入:输出固定 4:1：
 
 ```
 1 积分      = creditPrice / 100 元
 输入 ¥/M    = 输入积分 × creditPrice ÷ 100
-混合价      = (ratio × 输入价 + 输出价) ÷ (ratio + 1)
-预计月成本  = budget × (ratio × 输入价 + 输出价) ÷ (ratio × officialIn + officialOut)
-对比官方账单 = 月成本 ÷ (budget × fx) − 1
+混合价      = (4 × 输入价 + 输出价) ÷ 5
+月用量拆分   = 输入 monthlyTokens × 4/5，输出 monthlyTokens × 1/5
+预计月成本  = monthlyTokens × 混合价
+对比现行花费 = 月成本 ÷ currentSpend − 1
 ```
-
-月用量反推：`tOut = budget ÷ (ratio × officialIn + officialOut)`，`tIn = tOut × ratio`。
 
 > 计算逻辑实现于 [`src/calc.mjs`](src/calc.mjs)（纯函数），测试见 [`tests/app.test.mjs`](tests/app.test.mjs)。
 
@@ -53,13 +52,13 @@ A single-file, zero-dependency web tool that converts TokenBom's credit-based mo
 
 | 参数 | 含义 | 默认值 |
 |---|---|---|
-| 积分售价 | TokenBom 充值标价（¥/100积分） | 0.2 |
-| 美元汇率 | 1 USD = X CNY | 7.2 |
-| 官方 Opus 5 单价 | 官方 API 价格（$/M tokens） | 输入 5 / 输出 25 |
-| 月锚点花费 | 每月官方 API 账单（USD），估算基准 | 1200 |
-| 输入:输出 | token 用量中输入与输出的比例 | 4:1 |
+| 积分售价 | 档位下拉（¥/100积分） | 0.20（可选 0.18 / 0.16 / 0.14） |
+| 我的模型月用量 | 你的模型每月 token 总用量（M tokens/月），按 4:1 拆分输入/输出 | 133.3 |
+| 现行月花费 | 你现在每月实际花费（¥），作为「对比现行花费」列的基准 | 8640 |
+| 美元汇率 | 固定 7.2，不可调 | — |
+| 输入:输出 | 固定 4:1，不可调 | — |
 
-所有参数改动即时重算并保存到浏览器 localStorage，下次打开无需重设。
+参数改动即时重算并保存到浏览器 localStorage，下次打开无需重设。
 
 ## 更新价格数据
 

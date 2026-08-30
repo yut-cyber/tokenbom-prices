@@ -4,7 +4,7 @@ import * as calc from './calc.mjs';
 const API_URL = 'https://tokenbom.com/api/models';
 const VERSION = '1.0.0';
 const LS_DATA = 'tokenbom_data_v1', LS_CFG = 'tokenbom_cfg_v2';
-const DEFAULTS = { creditPrice: 0.2, fx: 7.2, officialIn: 5, officialOut: 25, budget: 1200, ratio: 4 };
+const DEFAULTS = { creditPrice: 0.2, monthlyTokens: 133.3, currentSpend: 8640 };
 
 const state = {
   cfg: { ...DEFAULTS },
@@ -127,21 +127,17 @@ function renderTable() {
   $('count').textContent = '显示 ' + list.length + ' / ' + state.models.length + ' 个模型（按 token 计费）';
   const rows = list.map((m, i) => {
     const d = derived(m, state.cfg);
-    const isAnchor = /opus-5/.test(m.model);
-    const isBench = Math.abs(d.vs) < 0.005;
     let delta;
-    if (isBench) delta = '<span class="delta-zero">≈ 你的现状</span>';
+    if (state.cfg.currentSpend <= 0) delta = '<span class="delta-zero">—</span>';
+    else if (Math.abs(d.vs) < 0.005) delta = '<span class="delta-zero">≈ 你的现状</span>';
     else {
-      const pct = (d.vs * 100);
-      const rounded = Math.round(Math.abs(pct));
-      const digits = rounded >= 99 ? 1 : 0;   // 接近±100%时保留一位小数，避免误读为免费
       const cls = d.vs < 0 ? 'delta-neg' : 'delta-pos';
-      delta = '<span class="' + cls + '">' + (pct > 0 ? '+' : '') + pct.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits }) + '%</span>';
+      delta = '<span class="' + cls + '">' + calc.deltaPercent(d.vs) + '%</span>';
     }
     const sunset = m.sunset ? '<span class="badge b-sunset" title="被 ' + esc(m.sunset.replacedBy || '') + ' 接替">下线 ' + esc((m.sunset.sunsetAt || '').slice(0, 10)) + '</span>' : '';
-    return '<tr' + (isAnchor ? ' class="bench"' : '') + '>' +
+    return '<tr>' +
       '<td class="l muted">' + (i + 1) + '</td>' +
-      '<td class="l"><span class="mname">' + esc(m.model) + '</span>' + (isAnchor ? '<span class="badge b-anchor" title="你在官方 API 正在用的模型">你的模型</span>' : '') + availBadge(m) + sunset + '</td>' +
+      '<td class="l"><span class="mname">' + esc(m.model) + '</span>' + availBadge(m) + sunset + '</td>' +
       '<td title="' + esc(m.pricing.inputPriceCredits) + ' 积分/M">¥' + fmtPrice(d.inCny) + '</td>' +
       '<td title="' + esc(m.pricing.outputPriceCredits) + ' 积分/M">¥' + fmtPrice(d.outCny) + '</td>' +
       '<td>¥' + fmtPrice(d.blended) + '</td>' +
@@ -160,21 +156,19 @@ function renderTable() {
 
 function renderStats() {
   const c = state.cfg;
-  const perOut = calc.perOutOf(c);            // 官方每 1M 输出对应的花费($)
-  const { tIn, tOut } = calc.inferUsage(c);   // 反推月用量
-  const blendOffCny = calc.officialBlendedCny(c);
-  const creditCny = calc.creditCnyOf(c);
-  let discount = '';
-  const anchor = state.models.find(m => /opus-5/.test(m.model));
-  if (anchor) {
-    const db = derived(anchor, c).blended;
-    if (db > 0) discount = '<span>同款 opus-5 在 TokenBom：<b>¥' + fmtPrice(db) + '/M</b>，约为官方价的 <b>1/' + Math.max(1, Math.round(blendOffCny / db)) + '</b></span>';
+  const creditCny = calc.creditCnyOf(c.creditPrice);
+  const { tIn, tOut } = calc.splitUsage(c.monthlyTokens);
+  let anchor = '';
+  const ref = state.models.find(m => /opus-5/.test(m.model));
+  if (ref) {
+    const d = derived(ref, c);
+    anchor = '<span>同款 opus-5 月成本：<b>' + fmtCNY(d.monthly) + '</b>（混合 ¥' + fmtPrice(d.blended) + '/M）</span>';
   }
   $('stats').innerHTML =
-    '<span>反推你的月用量（按 ' + c.ratio + ':1）：<b>' + fmtNum(tIn, 1) + 'M 输入</b> + <b>' + fmtNum(tOut, 1) + 'M 输出</b> tokens</span>' +
-    '<span>官方 Opus 5 混合价：<b>¥' + fmtNum(blendOffCny, 1) + '/M</b>（$' + fmtNum(perOut / (c.ratio + 1), 2) + '/M）</span>' +
-    '<span>积分购买价：<b>¥' + creditCny.toFixed(4) + '/积分</b>（¥' + c.creditPrice + '/100积分）</span>' +
-    discount + '<span>月官方账单：<b>' + fmtCNY(c.budget * c.fx) + '</b>（$' + fmtNum(c.budget, 0) + '）</span>';
+    '<span>月用量（4:1 拆分）：<b>' + fmtNum(tIn, 1) + 'M 输入</b> + <b>' + fmtNum(tOut, 1) + 'M 输出</b> tokens</span>' +
+    '<span>积分购买价：<b>¥' + creditCny.toFixed(4) + '/积分</b>（¥' + c.creditPrice + '/100积分，汇率固定 7.2）</span>' +
+    '<span>现行月花费：<b>' + fmtCNY(c.currentSpend) + '</b></span>' +
+    anchor;
 }
 
 function renderPerCall() {
@@ -183,7 +177,7 @@ function renderPerCall() {
   if (!pcs.length) { sec.classList.add('hidden'); return; }
   sec.classList.remove('hidden');
   const c = state.cfg;
-  const creditCny = calc.creditCnyOf(c);
+  const creditCny = calc.creditCnyOf(c.creditPrice);
   $('percall-body').innerHTML = pcs.map(m => {
     const p = m.pricing;
     let tbl = '';
@@ -213,13 +207,12 @@ function renderAll() { renderStats(); renderTable(); renderPerCall(); renderStat
 
 function renderAssumptions() {
   const c = state.cfg;
+  const { tIn, tOut } = calc.splitUsage(c.monthlyTokens);
   $('assumptions').innerHTML =
-    '<b>估算口径</b>：你目前在官方 API 用 Opus 5 每月约 ' + fmtCNY(c.budget * c.fx) +
-    '（$' + fmtNum(c.budget, 0) + '，官方价假设 $' + c.officialIn + '/M 输入、$' + c.officialOut + '/M 输出），按输入:输出 = ' + c.ratio +
-    ':1 反推月 token 用量。「预计月成本」= 同样的 token 量在 TokenBom 按积分计费的花费：模型单价来自 API（积分/百万 token，即站面显示的 积分/K ×1000），'
-    + '积分按购买价折算（¥' + c.creditPrice + '/100积分，即 1 积分 ¥' + calc.creditCnyOf(c).toFixed(4) +
-    '）。注意 TokenBom 积分定价远低于官方价（约 1/30 ~ 1/50），所以同一模型在这里跑通常只有官方账单的百分之几。'
-    + '「对比官方账单」= 相对你每月 ' + fmtCNY(c.budget * c.fx) + ' 官方账单的增减。比例、积分售价、官方单价都可在上方调整。';
+    '<b>估算口径</b>：你的模型每月约 ' + fmtNum(c.monthlyTokens, 1) + 'M tokens，按输入:输出 = 4:1 拆分为 ' +
+    fmtNum(tIn, 1) + 'M 输入 + ' + fmtNum(tOut, 1) + 'M 输出。「预计月成本」= 同样的 token 量在 TokenBom 按积分计费的花费：模型单价来自 API（积分/百万 token，即站面显示的 积分/K ×1000），'
+    + '积分按购买价折算（¥' + c.creditPrice + '/100积分，即 1 积分 ¥' + calc.creditCnyOf(c.creditPrice).toFixed(4) +
+    '，汇率固定 7.2）。「对比现行花费」= 相对你填写的现行月花费 ' + fmtCNY(c.currentSpend) + ' 的增减。';
 }
 
 /* ---------- 导出 ---------- */
@@ -227,7 +220,7 @@ function currentRows() { return filtered().map(m => ({ m, d: derived(m, state.cf
 
 function downloadCSV() {
   const head = ['model', 'availability', 'input_credits_per_M', 'output_credits_per_M',
-    'input_cny_per_M', 'output_cny_per_M', 'blended_cny_per_M', 'est_monthly_cny', 'vs_official_bill',
+    'input_cny_per_M', 'output_cny_per_M', 'blended_cny_per_M', 'est_monthly_cny', 'vs_current_spend',
     'max_input_tokens', 'max_output_tokens', 'output_tps_p50', 'sunset_at', 'replaced_by'];
   const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
   const lines = [head.join(',')];
@@ -250,12 +243,10 @@ function downloadCSV() {
 
 function copyMarkdown() {
   const rows = currentRows();
-  let md = '| 模型 | 输入 ¥/M | 输出 ¥/M | 混合 ¥/M | 预计月成本(¥) | 对比官方账单 |\n|---|---|---|---|---|---|\n';
+  let md = '| 模型 | 输入 ¥/M | 输出 ¥/M | 混合 ¥/M | 预计月成本(¥) | 对比现行花费 |\n|---|---|---|---|---|---|\n';
   rows.forEach(({ m, d }) => {
-    const pct = d.vs * 100;
-    const digits = Math.round(Math.abs(pct)) >= 99 ? 1 : 0;
     md += '| ' + m.model + ' | ¥' + fmtPrice(d.inCny) + ' | ¥' + fmtPrice(d.outCny) + ' | ¥' + fmtPrice(d.blended) +
-      ' | ' + fmtCNY(d.monthly) + ' | ' + (Math.abs(d.vs) < 0.005 ? '≈官方' : (pct > 0 ? '+' : '') + pct.toFixed(digits) + '%') + ' |\n';
+      ' | ' + fmtCNY(d.monthly) + ' | ' + (Math.abs(d.vs) < 0.005 ? '≈现行' : calc.deltaPercent(d.vs) + '%') + ' |\n';
   });
   const done = () => toast('已复制 Markdown（' + rows.length + ' 行）');
   if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -272,17 +263,21 @@ function fallbackCopy(text, done) {
 /* ---------- 控件绑定 ---------- */
 function bindParams() {
   const c = state.cfg;
-  const fields = { creditPrice: 'creditPrice', fx: 'fx', offin: 'officialIn', offout: 'officialOut', budget: 'budget', ratio: 'ratio' };
-  for (const [id, key] of Object.entries(fields)) {
+  const numbers = { monthlyTokens: 'monthlyTokens', currentSpend: 'currentSpend' };
+  const tier = $('creditTier');
+  tier.value = String(c.creditPrice);
+  tier.addEventListener('change', () => {
+    const v = parseFloat(tier.value);
+    if (!isNaN(v) && v > 0) { c.creditPrice = v; saveCfg(); renderAll(); }
+  });
+  for (const [id, key] of Object.entries(numbers)) {
     const el = $(id);
     el.value = c[key];
     el.addEventListener('input', () => {
       const v = parseFloat(el.value);
       if (!isNaN(v) && v >= 0) { c[key] = v; saveCfg(); renderAll(); }
-      if (id === 'ratio') $('ratio-label').textContent = c.ratio + ':1';
     });
   }
-  $('ratio-label').textContent = c.ratio + ':1';
 }
 function saveCfg() { try { localStorage.setItem(LS_CFG, JSON.stringify(state.cfg)); } catch (e) {} }
 function loadCfg() {
@@ -324,10 +319,9 @@ function bindRest() {
   $('open-api').href = API_URL;
 }
 function bindParamsValues() {
-  $('creditPrice').value = state.cfg.creditPrice; $('fx').value = state.cfg.fx;
-  $('offin').value = state.cfg.officialIn;
-  $('offout').value = state.cfg.officialOut; $('budget').value = state.cfg.budget;
-  $('ratio').value = state.cfg.ratio; $('ratio-label').textContent = state.cfg.ratio + ':1';
+  $('creditTier').value = String(state.cfg.creditPrice);
+  $('monthlyTokens').value = state.cfg.monthlyTokens;
+  $('currentSpend').value = state.cfg.currentSpend;
 }
 
 /* ---------- 启动 ---------- */

@@ -1,49 +1,52 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  FX, RATIO, CREDIT_TIERS,
   fmtNum, fmtPrice, fmtCNY, fmtTok,
-  creditCnyOf, perOutOf, inferUsage, officialBlendedCny, derived,
+  creditCnyOf, splitUsage, derived, deltaPercent,
 } from '../src/calc.mjs';
 
-const DEFAULTS = { creditPrice: 0.2, fx: 7.2, officialIn: 5, officialOut: 25, budget: 1200, ratio: 4 };
+const DEFAULTS = { creditPrice: 0.2, monthlyTokens: 133.3, currentSpend: 8640 };
+
+test('常量：汇率/比例/档位', () => {
+  assert.equal(FX, 7.2);
+  assert.equal(RATIO, 4);
+  assert.deepEqual(CREDIT_TIERS, [0.2, 0.18, 0.16, 0.14]);
+});
 
 test('creditCnyOf: 积分购买价换算', () => {
-  assert.equal(creditCnyOf(DEFAULTS), 0.002);
-  assert.equal(creditCnyOf({ creditPrice: 1 }), 0.01);
-  assert.equal(creditCnyOf({ creditPrice: 0 }), 0);
+  assert.equal(creditCnyOf(0.2), 0.002);
+  assert.ok(Math.abs(creditCnyOf(0.14) - 0.0014) < 1e-12);
+  assert.equal(creditCnyOf(0), 0);
 });
 
-test('perOutOf: 官方每 1M 输出对应花费', () => {
-  assert.equal(perOutOf(DEFAULTS), 45);
-  assert.equal(perOutOf({ ratio: 1, officialIn: 5, officialOut: 25 }), 30);
-  assert.equal(perOutOf({ ratio: 20, officialIn: 0, officialOut: 0 }), 0);
-});
-
-test('inferUsage: 反推月用量', () => {
-  const { tIn, tOut } = inferUsage(DEFAULTS);
-  assert.ok(Math.abs(tOut - 1200 / 45) < 1e-9);
-  assert.ok(Math.abs(tIn - (1200 / 45) * 4) < 1e-9);
-  const zero = inferUsage({ ratio: 4, officialIn: 0, officialOut: 0, budget: 100 });
-  assert.equal(zero.tOut, 0);
+test('splitUsage: 4:1 拆分月用量', () => {
+  const { tIn, tOut } = splitUsage(100);
+  assert.ok(Math.abs(tIn - 80) < 1e-9);
+  assert.ok(Math.abs(tOut - 20) < 1e-9);
+  const zero = splitUsage(0);
   assert.equal(zero.tIn, 0);
+  assert.equal(zero.tOut, 0);
 });
 
-test('officialBlendedCny: 官方混合价', () => {
-  assert.ok(Math.abs(officialBlendedCny(DEFAULTS) - (45 / 5) * 7.2) < 1e-9);
-  assert.equal(officialBlendedCny(DEFAULTS), 64.8);
-});
-
-test('derived: opus-5 锚点模型（积分 500/2500）', () => {
+test('derived: opus-5（积分 500/2500，默认档位与用量）', () => {
   const m = { pricing: { inputPriceCredits: 500, outputPriceCredits: 2500 } };
   const d = derived(m, DEFAULTS);
   assert.equal(d.inCny, 1.0);
   assert.equal(d.outCny, 5.0);
-  assert.ok(Math.abs(d.blended - (4 * 1 + 5) / 5) < 1e-9);
   assert.equal(d.blended, 1.8);
-  assert.ok(Math.abs(d.monthly - 1200 * 9 / 45) < 1e-9);
-  assert.equal(d.monthly, 240);
-  assert.ok(Math.abs(d.vs - (240 / (1200 * 7.2) - 1)) < 1e-12);
+  assert.ok(Math.abs(d.monthly - 133.3 * 1.8) < 1e-9);
+  assert.ok(Math.abs(d.monthly - 239.94) < 1e-9);
+  assert.ok(Math.abs(d.vs - (239.94 / 8640 - 1)) < 1e-12);
   assert.ok(Math.abs(d.vs + 0.9722) < 0.0001);
+});
+
+test('derived: 低档位 0.14 时单价更低', () => {
+  const m = { pricing: { inputPriceCredits: 500, outputPriceCredits: 2500 } };
+  const d = derived(m, { ...DEFAULTS, creditPrice: 0.14 });
+  assert.ok(Math.abs(d.inCny - 0.7) < 1e-9);
+  assert.ok(Math.abs(d.outCny - 3.5) < 1e-9);
+  assert.ok(Math.abs(d.blended - (4 * 0.7 + 3.5) / 5) < 1e-9);
 });
 
 test('derived: 缺失积分数按 0 处理', () => {
@@ -52,20 +55,30 @@ test('derived: 缺失积分数按 0 处理', () => {
   assert.equal(d.outCny, 0);
   assert.equal(d.blended, 0);
   assert.equal(d.monthly, 0);
+  assert.equal(d.vs, -1);
 });
 
-test('derived: budget=0 时 vs 保护为 0', () => {
-  const d = derived({ pricing: { inputPriceCredits: 1, outputPriceCredits: 1 } }, { ...DEFAULTS, budget: 0 });
+test('derived: 用量为 0 时月成本为 0', () => {
+  const d = derived({ pricing: { inputPriceCredits: 1, outputPriceCredits: 1 } }, { ...DEFAULTS, monthlyTokens: 0 });
   assert.equal(d.monthly, 0);
+});
+
+test('derived: 现行花费为 0 时 vs 保护为 0', () => {
+  const d = derived({ pricing: { inputPriceCredits: 1, outputPriceCredits: 1 } }, { ...DEFAULTS, currentSpend: 0 });
   assert.equal(d.vs, 0);
 });
 
-test('derived: ratio 极端值下公式稳定', () => {
-  const cfg = { ...DEFAULTS, ratio: 20 };
-  const m = { pricing: { inputPriceCredits: 100, outputPriceCredits: 5000 } };
-  const d = derived(m, cfg);
-  assert.ok(Math.abs(d.blended - (20 * 0.2 + 10) / 21) < 1e-9);
-  assert.ok(Math.abs(d.monthly - 1200 * (20 * 0.2 + 10) / (20 * 5 + 25)) < 1e-9);
+test('derived: vs 正负号（更贵为正）', () => {
+  const m = { pricing: { inputPriceCredits: 50000, outputPriceCredits: 250000 } };
+  const d = derived(m, { ...DEFAULTS, monthlyTokens: 133.3, currentSpend: 100 });
+  assert.ok(d.vs > 0);
+});
+
+test('deltaPercent: 百分比文本格式（不含%号，由调用处拼接）', () => {
+  assert.equal(deltaPercent(-0.9722), '-97');
+  assert.equal(deltaPercent(-0.995), '-99.5');
+  assert.equal(deltaPercent(0.0321), '+3');
+  assert.equal(deltaPercent(-0.001), '-0');
 });
 
 test('fmtNum/fmtPrice: 数字格式化', () => {

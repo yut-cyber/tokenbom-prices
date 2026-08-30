@@ -25,13 +25,19 @@
 
 <section class="card">
   <div class="params">
-    <span class="param"><label>积分售价</label>¥<input type="number" id="creditPrice" step="0.01" min="0"> / 100 积分</span>
-    <span class="param"><label>美元汇率</label>1$ = ¥<input type="number" id="fx" step="0.1" min="0"></span>
-    <span class="param"><label>官方 Opus 5 单价($/M)</label>输入 $<input type="number" id="offin" step="0.5" min="0"> 输出 $<input type="number" id="offout" step="0.5" min="0"></span>
-    <span class="param"><label>月锚点花费</label>$<input type="number" id="budget" step="50" min="0"></span>
-    <span class="param"><label>输入:输出</label><input type="range" id="ratio" min="1" max="20" step="0.5"><span class="ratio-val" id="ratio-label"></span></span>
+    <span class="param"><label>积分售价</label>
+      <select id="creditTier">
+        <option value="0.2">¥0.20 / 100积分</option>
+        <option value="0.18">¥0.18 / 100积分</option>
+        <option value="0.16">¥0.16 / 100积分</option>
+        <option value="0.14">¥0.14 / 100积分</option>
+      </select>
+    </span>
+    <span class="param"><label>我的模型月用量</label><input type="number" id="monthlyTokens" step="10" min="0"> M tokens/月</span>
+    <span class="param"><label>现行月花费</label>¥<input type="number" id="currentSpend" step="10" min="0"> /月</span>
     <span class="param"><button id="btn-reset">恢复默认</button></span>
   </div>
+  <p class="rule-note">口径：月总用量按 <b>4:1</b> 拆分为输入/输出 → <b>月成本 = 输入M×输入价 + 输出M×输出价</b>（积分按所选档位折算为人民币，汇率固定 7.2）；「对比」列 = 相对你填写的现行月花费的增减。</p>
   <div class="stats" id="stats"></div>
 </section>
 
@@ -72,7 +78,7 @@
       <th class="sortable" data-key="out">输出 ¥/M <span class="arrow"></span></th>
       <th class="sortable" data-key="blended">混合 ¥/M <span class="arrow"></span></th>
       <th class="sortable" data-key="monthly">预计月成本(¥) <span class="arrow"></span></th>
-      <th title="相对你每月官方账单（月锚点）的增减">对比官方账单</th>
+      <th title="相对你填写的现行月花费的增减">对比现行花费</th>
       <th class="l">上下文 / 能力</th>
     </tr></thead>
     <tbody id="tbody"></tbody>

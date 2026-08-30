@@ -16,7 +16,7 @@ const app = read('src/app.js')
     "'use strict';\n",
     () => `'use strict';
 const calc = (() => {
-${calc}  return { fmtNum, fmtPrice, fmtCNY, fmtTok, creditCnyOf, perOutOf, inferUsage, officialBlendedCny, derived };
+${calc}  return { fmtNum, fmtPrice, fmtCNY, fmtTok, creditCnyOf, splitUsage, derived, deltaPercent };
 })();
 const { fmtNum, fmtPrice, fmtCNY, fmtTok, derived } = calc;
 `
