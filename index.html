@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TokenBom 模型价格榜 · 月成本估算</title>
+<style>
+  :root{
+    --bg:#f4f5f9; --card:#ffffff; --line:#e4e6ef; --txt:#1c2030; --sub:#6b7280;
+    --accent:#4f46e5; --accent-soft:#eef0ff; --good:#0a8a4a; --bad:#c2392f;
+    --bench:#fff8e1; --bench-line:#f0d98c;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);
+    font:14px/1.5 -apple-system,"Segoe UI","Microsoft YaHei",system-ui,sans-serif;}
+  .wrap{max-width:1180px;margin:0 auto;padding:20px 16px 60px}
+  header{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between;margin-bottom:14px}
+  h1{font-size:22px;margin:0}
+  h1 a{color:inherit;text-decoration:none;border-bottom:1px dotted #b6bac9}
+  .status{color:var(--sub);font-size:12.5px;margin-top:3px}
+  .actions{display:flex;gap:8px;flex-wrap:wrap}
+  button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--card);
+    padding:7px 13px;border-radius:8px;transition:.15s}
+  button:hover{border-color:var(--accent);color:var(--accent)}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  button.primary:hover{opacity:.9;color:#fff}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:14px}
+  .params{display:flex;flex-wrap:wrap;gap:14px 22px;align-items:center}
+  .param{display:flex;align-items:center;gap:7px;white-space:nowrap}
+  .param label{color:var(--sub)}
+  input[type=number]{width:76px;font:inherit;padding:5px 7px;border:1px solid var(--line);border-radius:7px;text-align:right}
+  input[type=text]{font:inherit;padding:6px 10px;border:1px solid var(--line);border-radius:7px;width:200px}
+  select{font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:7px}
+  input[type=range]{width:150px;accent-color:var(--accent);vertical-align:middle}
+  .ratio-val{font-weight:600;min-width:38px;display:inline-block}
+  .stats{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);color:var(--sub);font-size:12.8px;display:flex;flex-wrap:wrap;gap:6px 18px}
+  .stats b{color:var(--txt)}
+  .filters{display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+  .filters label{display:flex;gap:6px;align-items:center;color:var(--sub);cursor:pointer}
+  .table-wrap{padding:0;overflow:auto;max-height:max(420px, calc(100vh - 330px))}
+  table{width:100%;border-collapse:collapse;font-size:13.2px;min-width:900px}
+  thead th{position:sticky;top:0;background:#fafbfe;border-bottom:2px solid var(--line);
+    padding:10px 12px;text-align:right;white-space:nowrap;user-select:none;z-index:2}
+  thead th.l{text-align:left}
+  thead th.sortable{cursor:pointer}
+  thead th.sortable:hover{color:var(--accent)}
+  thead .arrow{font-size:10px;color:var(--accent)}
+  tbody td{padding:8px 12px;border-bottom:1px solid #eef0f5;text-align:right;white-space:nowrap}
+  tbody td.l{text-align:left}
+  tbody tr:hover{background:#f8f9fd}
+  tbody tr.bench{background:var(--bench)}
+  tbody tr.bench:hover{background:#fdf3d0}
+  .mname{font-weight:600}
+  .badge{display:inline-block;font-size:10.5px;line-height:1;padding:3px 6px;border-radius:20px;margin-left:5px;vertical-align:1px;white-space:nowrap}
+  .b-avail{background:#e2f5ea;color:var(--good)}
+  .b-supply{background:#fff2dd;color:#a06a00}
+  .b-verifying{background:#e8e8f5;color:#5b5b8a}
+  .b-sunset{background:#fde8e6;color:var(--bad)}
+  .b-anchor{background:#f0d98c;color:#6b5200;font-weight:700}
+  .chips{color:var(--sub);font-size:11.5px;white-space:normal;max-width:300px}
+  .chip{display:inline-block;border:1px solid var(--line);border-radius:5px;padding:1px 5px;margin:1px 2px;background:#fbfbfe}
+  .delta-neg{color:var(--good);font-weight:600}
+  .delta-pos{color:var(--bad);font-weight:600}
+  .delta-zero{color:var(--sub)}
+  .muted{color:var(--sub)}
+  .hidden{display:none!important}
+  #paste-panel{border-color:#f0d98c;background:#fffdf4}
+  #paste-panel h2{margin:0 0 8px;font-size:15px}
+  #paste-panel ol{margin:6px 0 10px;padding-left:20px;color:var(--sub)}
+  #paste-panel textarea{width:100%;height:110px;font:12px/1.4 Consolas,monospace;border:1px solid var(--line);
+    border-radius:8px;padding:8px;resize:vertical}
+  .paste-row{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+  .err{color:var(--bad);font-size:12.5px;margin-top:6px}
+  #percall h2{margin:0 0 10px;font-size:15px}
+  .pc-model{font-weight:700;margin:10px 0 4px}
+  .pc-table{border-collapse:collapse;font-size:12.8px;margin-left:12px}
+  .pc-table td,.pc-table th{border:1px solid var(--line);padding:4px 10px;text-align:left}
+  footer{color:var(--sub);font-size:12.3px;line-height:1.7;margin-top:18px}
+  #toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);opacity:0;
+    background:#22263a;color:#fff;padding:9px 18px;border-radius:20px;font-size:13px;transition:.25s;pointer-events:none;z-index:9}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .count{color:var(--sub);font-size:12.5px;margin:0 0 6px 4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div>
+    <h1><a href="https://tokenbom.com/dashboard" target="_blank" rel="noopener">TokenBom</a> 模型价格榜 · 月成本估算</h1>
+    <div class="status" id="data-status">加载中…</div>
+  </div>
+  <div class="actions">
+    <button class="primary" id="btn-refresh">🔄 拉取最新价格</button>
+    <button id="btn-csv">⬇ 下载 CSV</button>
+    <button id="btn-md">⧉ 复制 Markdown</button>
+  </div>
+</header>
+
+<section class="card">
+  <div class="params">
+    <span class="param"><label>积分售价</label>¥<input type="number" id="creditPrice" step="0.01" min="0"> / 100 积分</span>
+    <span class="param"><label>美元汇率</label>1$ = ¥<input type="number" id="fx" step="0.1" min="0"></span>
+    <span class="param"><label>官方 Opus 5 单价($/M)</label>输入 $<input type="number" id="offin" step="0.5" min="0"> 输出 $<input type="number" id="offout" step="0.5" min="0"></span>
+    <span class="param"><label>月锚点花费</label>$<input type="number" id="budget" step="50" min="0"></span>
+    <span class="param"><label>输入:输出</label><input type="range" id="ratio" min="1" max="20" step="0.5"><span class="ratio-val" id="ratio-label"></span></span>
+    <span class="param"><button id="btn-reset">恢复默认</button></span>
+  </div>
+  <div class="stats" id="stats"></div>
+</section>
+
+<section class="card filters">
+  <input type="text" id="search" placeholder="🔍 搜索模型名…">
+  <select id="avail">
+    <option value="all">全部状态</option>
+    <option value="available">仅可用</option>
+    <option value="needs_supply">仅缺供应</option>
+    <option value="verifying">仅验证中</option>
+  </select>
+  <label><input type="checkbox" id="hidesunset">隐藏将下线模型</label>
+  <span class="count" id="count"></span>
+</section>
+
+<section class="card hidden" id="paste-panel">
+  <h2>⚠️ 浏览器拦截了跨域请求（CORS），改用手动更新（约 10 秒）</h2>
+  <ol>
+    <li><a href="#" id="open-api" target="_blank" rel="noopener">点这里在新标签页打开 API 数据页</a></li>
+    <li>在那一页 <b>Ctrl+A 全选 → Ctrl+C 复制</b></li>
+    <li>回到本页，点「从剪贴板读取」，或直接在下面 Ctrl+V 后点「解析」</li>
+  </ol>
+  <textarea id="paste-box" placeholder='粘贴 JSON，形如 {"models":[...]}` 或直接 `[ {...} ]`'></textarea>
+  <div class="paste-row">
+    <button class="primary" id="btn-clip">📋 从剪贴板读取</button>
+    <button id="btn-parse">解析并更新</button>
+    <button id="btn-restore">恢复内嵌快照</button>
+    <span class="err hidden" id="paste-err"></span>
+  </div>
+</section>
+
+<div class="card table-wrap">
+  <table id="tbl">
+    <thead><tr>
+      <th class="l">#</th>
+      <th class="l sortable" data-key="model">模型 <span class="arrow"></span></th>
+      <th class="sortable" data-key="in">输入 ¥/M <span class="arrow"></span></th>
+      <th class="sortable" data-key="out">输出 ¥/M <span class="arrow"></span></th>
+      <th class="sortable" data-key="blended">混合 ¥/M <span class="arrow"></span></th>
+      <th class="sortable" data-key="monthly">预计月成本(¥) <span class="arrow"></span></th>
+      <th title="相对你每月官方账单（月锚点）的增减">对比官方账单</th>
+      <th class="l">上下文 / 能力</th>
+    </tr></thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<section class="card hidden" id="percall">
+  <h2>按次计费模型（不参与按 token 的月成本估算）</h2>
+  <div id="percall-body"></div>
+</section>
+
+<footer id="assumptions"></footer>
+
+</div>
+<div id="toast"></div>
+
+<script type="application/json" id="snapshot-json">{"fetchedAt":"2026-08-29T17:14:58.715509+00:00","models":[{"model":"claude-4.6-sonnet","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":300,"outputPriceCredits":1500,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":false,"audioOutput":false,"pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"source":"registry"},"supplyDepth":"multi"},{"model":"claude-4.8-opus","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":500,"outputPriceCredits":2500,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":false,"audioOutput":false,"pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"source":"registry"},"supplyDepth":"multi"},{"model":"claude-fable-5","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":1000,"outputPriceCredits":5000,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":false,"audioOutput":false,"pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":1000000,"maxOutputTokens":128000,"source":"registry"},"supplyDepth":"multi","outputTpsP50":101},{"model":"claude-opus-5","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":500,"outputPriceCredits":2500,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":false,"audioOutput":false,"pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":1000000,"maxOutputTokens":128000,"source":"registry"},"supplyDepth":"multi","outputTpsP50":117},{"model":"claude-sonnet-5","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":200,"outputPriceCredits":1000,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":false,"audioOutput":false,"pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":1000000,"maxOutputTokens":128000,"source":"registry"},"supplyDepth":"multi"},{"model":"gpt-4o","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":250,"outputPriceCredits":1000,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":128000,"maxOutputTokens":16384,"source":"litellm"},"supplyDepth":"multi"},{"model":"gpt-5.2","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":175,"outputPriceCredits":1400,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":272000,"maxOutputTokens":128000,"source":"registry"},"supplyDepth":"multi"},{"model":"gpt-5.4","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":250,"outputPriceCredits":1500,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":false,"audioOutput":false,"pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":1050000,"maxOutputTokens":128000,"source":"registry"},"supplyDepth":"multi","outputTpsP50":218},{"model":"gpt-5.4-mini","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":75,"outputPriceCredits":450,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":false,"audioInput":false,"audioOutput":false,"pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":272000,"maxOutputTokens":128000,"source":"registry"},"supplyDepth":"multi"},{"model":"gpt-5.4-pro","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":3000,"outputPriceCredits":18000,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"unknown","vision":true,"toolCall":true,"reasoning":true,"thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":true,"responseJsonObject":false,"responseSchema":false,"promptCaching":true,"systemMessages":true,"maxInputTokens":1050000,"maxOutputTokens":128000,"source":"litellm"},"supplyDepth":"multi"},{"model":"gpt-5.5","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":500,"outputPriceCredits":3000,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":false,"audioOutput":false,"pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":1050000,"maxOutputTokens":128000,"source":"registry"},"supplyDepth":"multi"},{"model":"gpt-5.6-luna","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":20,"outputPriceCredits":120,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":922000,"maxOutputTokens":128000,"source":"registry"},"supplyDepth":"multi","outputTpsP50":97},{"model":"gpt-5.6-sol","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":400,"outputPriceCredits":2000,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":922000,"maxOutputTokens":128000,"source":"registry"},"supplyDepth":"multi","outputTpsP50":135},{"model":"gpt-5.6-terra","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":200,"outputPriceCredits":1200,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":922000,"maxOutputTokens":128000,"source":"registry"},"supplyDepth":"multi"},{"model":"gpt-image-2","availability":"available","pricing":{"pricingType":"per_call","inputPriceCredits":0,"outputPriceCredits":0,"perCallPriceCredits":5.3,"perCallPricingTable":{"low:1024x1024":0.6,"low:1024x1536":0.5,"low:1536x1024":0.5,"high:1024x1024":21.1,"high:1024x1536":16.5,"high:1536x1024":16.5,"medium:1024x1024":5.3,"medium:1024x1536":4.1,"medium:1536x1024":4.1},"imageTokenPricing":{"textInputCredits":500,"imageInputCredits":800,"imageOutputCredits":3000},"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"image_generation","vision":false,"toolCall":false,"reasoning":false,"thinking":false,"audioInput":false,"audioOutput":false,"pdfInput":false,"responseJsonObject":false,"responseSchema":false,"promptCaching":"unknown","systemMessages":"unknown","source":"registry"},"supplyDepth":"multi"},{"model":"gemini-2.5-flash","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":30,"outputPriceCredits":250,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":true,"audioOutput":false,"pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":1048576,"maxOutputTokens":65536,"source":"registry"},"supplyDepth":"multi"},{"model":"gemini-2.5-flash-lite","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":10,"outputPriceCredits":40,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":true,"audioOutput":false,"pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":1048576,"maxOutputTokens":65536,"source":"registry"},"supplyDepth":"multi"},{"model":"gemini-2.5-pro","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":125,"outputPriceCredits":1000,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":"unknown","audioInput":true,"audioOutput":"unknown","pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":1048576,"maxOutputTokens":65535,"source":"litellm"},"supplyDepth":"multi"},{"model":"gemini-3.1-flash-lite","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":25,"outputPriceCredits":150,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":"unknown","audioInput":true,"audioOutput":false,"pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":1048576,"maxOutputTokens":65536,"source":"litellm"},"supplyDepth":"multi"},{"model":"gemini-3.5-flash","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":150,"outputPriceCredits":900,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":"unknown","audioInput":true,"audioOutput":false,"pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":1048576,"maxOutputTokens":65535,"source":"litellm"},"supplyDepth":"multi"},{"model":"gemini-3.5-flash-lite","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":30,"outputPriceCredits":250,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":true,"audioOutput":false,"pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":1048576,"maxOutputTokens":65536,"source":"registry"},"supplyDepth":"multi"},{"model":"gemini-3.7-flash","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":75,"outputPriceCredits":375,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":true,"audioOutput":false,"pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":1048576,"maxOutputTokens":65536,"source":"registry"},"supplyDepth":"multi"},{"model":"kimi-k2.5","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":60,"outputPriceCredits":250,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"registry"},"supplyDepth":"multi","sunset":{"sunsetAt":"2026-08-31","replacedBy":"kimi-k2.6"}},{"model":"kimi-k2.6","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":95,"outputPriceCredits":400,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"registry"},"supplyDepth":"multi"},{"model":"kimi-k2.7-code","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":95,"outputPriceCredits":400,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"unknown","vision":"unknown","toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"none"},"supplyDepth":"multi"},{"model":"kimi-k3","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":180,"outputPriceCredits":600,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"unknown","vision":"unknown","toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"none"},"supplyDepth":"multi"},{"model":"deepseek-v4-flash","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":34,"outputPriceCredits":77,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":false,"toolCall":true,"reasoning":true,"thinking":false,"audioInput":false,"audioOutput":false,"pdfInput":false,"responseJsonObject":true,"responseSchema":false,"promptCaching":true,"systemMessages":true,"maxInputTokens":1000000,"maxOutputTokens":393216,"source":"registry"},"supplyDepth":"multi","outputTpsP50":100},{"model":"deepseek-v4-flash-0731","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":34,"outputPriceCredits":77,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":"unknown","toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"registry"},"supplyDepth":"multi","outputTpsP50":119},{"model":"deepseek-v4-flash-vision-exp","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":34,"outputPriceCredits":77,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":false,"audioInput":false,"audioOutput":false,"pdfInput":false,"responseJsonObject":true,"responseSchema":false,"promptCaching":true,"systemMessages":true,"maxInputTokens":1000000,"maxOutputTokens":393216,"source":"registry"},"supplyDepth":"multi","outputTpsP50":123},{"model":"deepseek-v4-pro","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":95,"outputPriceCredits":263,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":false,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":false,"audioOutput":false,"pdfInput":false,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":1000000,"maxOutputTokens":393216,"source":"registry"},"supplyDepth":"multi","outputTpsP50":142},{"model":"deepseek-v4-pro-0813","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":95,"outputPriceCredits":263,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":false,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":false,"audioOutput":false,"pdfInput":false,"responseJsonObject":true,"responseSchema":true,"promptCaching":"unknown","systemMessages":true,"source":"registry"},"supplyDepth":"multi","outputTpsP50":75},{"model":"grok-4.5","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":200,"outputPriceCredits":600,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":"unknown","toolCall":"unknown","reasoning":true,"thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"registry"},"supplyDepth":"multi"},{"model":"grok-4.6","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":200,"outputPriceCredits":600,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"registry"},"supplyDepth":"multi","outputTpsP50":271},{"model":"qwen-vl-max","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":80,"outputPriceCredits":320,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"registry"},"supplyDepth":"multi"},{"model":"glm-4.5","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":60,"outputPriceCredits":220,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":false,"toolCall":true,"reasoning":true,"thinking":false,"audioInput":false,"audioOutput":false,"pdfInput":false,"responseJsonObject":true,"responseSchema":true,"promptCaching":"unknown","systemMessages":true,"source":"registry"},"supplyDepth":"multi"},{"model":"glm-4.5-air","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":20,"outputPriceCredits":110,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":false,"toolCall":true,"reasoning":true,"thinking":false,"audioInput":false,"audioOutput":false,"pdfInput":false,"responseJsonObject":true,"responseSchema":true,"promptCaching":"unknown","systemMessages":true,"source":"registry"},"supplyDepth":"multi"},{"model":"glm-4.6","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":60,"outputPriceCredits":220,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":false,"toolCall":true,"reasoning":true,"thinking":false,"audioInput":false,"audioOutput":false,"pdfInput":false,"responseJsonObject":true,"responseSchema":true,"promptCaching":"unknown","systemMessages":true,"source":"registry"},"supplyDepth":"multi"},{"model":"glm-4.7","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":60,"outputPriceCredits":220,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":false,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":false,"audioOutput":false,"pdfInput":false,"responseJsonObject":true,"responseSchema":true,"promptCaching":"unknown","systemMessages":true,"source":"registry"},"supplyDepth":"multi"},{"model":"glm-5","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":100,"outputPriceCredits":320,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":false,"toolCall":true,"reasoning":true,"thinking":false,"audioInput":false,"audioOutput":false,"pdfInput":false,"responseJsonObject":true,"responseSchema":true,"promptCaching":"unknown","systemMessages":true,"source":"registry"},"supplyDepth":"multi","outputTpsP50":54},{"model":"glm-5-turbo","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":120,"outputPriceCredits":400,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":false,"toolCall":true,"reasoning":true,"thinking":false,"audioInput":false,"audioOutput":false,"pdfInput":false,"responseJsonObject":true,"responseSchema":true,"promptCaching":"unknown","systemMessages":true,"source":"registry"},"supplyDepth":"multi"},{"model":"glm-5.1","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":140,"outputPriceCredits":440,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":false,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":false,"audioOutput":false,"pdfInput":false,"responseJsonObject":true,"responseSchema":true,"promptCaching":"unknown","systemMessages":true,"source":"registry"},"supplyDepth":"multi"},{"model":"glm-5.2","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":140,"outputPriceCredits":440,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":"unknown","toolCall":"unknown","reasoning":true,"thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"registry"},"supplyDepth":"multi","outputTpsP50":84},{"model":"glm-5.3","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":140,"outputPriceCredits":440,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":false,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":false,"audioOutput":false,"pdfInput":true,"responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"registry"},"supplyDepth":"multi","outputTpsP50":91},{"model":"glm-5.3-flash","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":15,"outputPriceCredits":50,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":false,"audioOutput":false,"pdfInput":"unknown","responseJsonObject":true,"responseSchema":true,"promptCaching":"unknown","systemMessages":true,"maxInputTokens":1048576,"maxOutputTokens":131072,"source":"registry"},"supplyDepth":"multi","outputTpsP50":133},{"model":"codestral-2508","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":30,"outputPriceCredits":90,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":"unknown","toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":false,"audioOutput":false,"pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":true,"systemMessages":true,"maxInputTokens":131072,"source":"registry"},"supplyDepth":"multi"},{"model":"mistral-large-2512","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":50,"outputPriceCredits":150,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":"unknown","toolCall":true,"reasoning":"unknown","thinking":"unknown","audioInput":false,"audioOutput":false,"pdfInput":"unknown","responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":262144,"source":"registry"},"supplyDepth":"multi"},{"model":"mistral-medium-latest","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":150,"outputPriceCredits":750,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":false,"toolCall":true,"reasoning":"unknown","thinking":"unknown","audioInput":false,"audioOutput":false,"pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"source":"registry"},"supplyDepth":"multi"},{"model":"mistral-small-latest","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":15,"outputPriceCredits":60,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":false,"thinking":false,"audioInput":false,"audioOutput":false,"pdfInput":"unknown","responseJsonObject":true,"responseSchema":"unknown","promptCaching":false,"systemMessages":true,"source":"registry"},"supplyDepth":"multi"},{"model":"agnes-2.0-flash","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":0,"outputPriceCredits":0,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":"unknown","toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"registry"},"supplyDepth":"multi"},{"model":"agnes-2.5-flash","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":0,"outputPriceCredits":0,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":"unknown","toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","maxInputTokens":512000,"source":"registry"},"supplyDepth":"multi"},{"model":"agnes-2.5-pro","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":45,"outputPriceCredits":90,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":"unknown","toolCall":true,"reasoning":true,"thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","maxInputTokens":1000000,"maxOutputTokens":65536,"source":"registry"},"supplyDepth":"multi"},{"model":"agnes-2.5-pro-alpha","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":45,"outputPriceCredits":90,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"registry"},"supplyDepth":"multi"},{"model":"agnes-2.5-pro-beta","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":45,"outputPriceCredits":90,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":"unknown","toolCall":true,"reasoning":true,"thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","maxInputTokens":1000000,"maxOutputTokens":65536,"source":"registry"},"supplyDepth":"multi"},{"model":"hy3","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":14,"outputPriceCredits":56,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":false,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"source":"registry"},"supplyDepth":"multi"},{"model":"kat-coder-pro-v2.5","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":74,"outputPriceCredits":296,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":"unknown","toolCall":true,"reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","maxInputTokens":262144,"maxOutputTokens":80000,"source":"registry"},"supplyDepth":"multi"},{"model":"laguna-s-2.1","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":9,"outputPriceCredits":18,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":"unknown","toolCall":true,"reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"registry"},"supplyDepth":"multi"},{"model":"longcat-2.0","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":30,"outputPriceCredits":120,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":false,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":false,"audioOutput":false,"pdfInput":false,"responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":true,"systemMessages":true,"maxInputTokens":1048576,"maxOutputTokens":131072,"source":"registry"},"supplyDepth":"multi"},{"model":"mimo-v2.5","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":14,"outputPriceCredits":28,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":false,"audioOutput":false,"pdfInput":false,"responseJsonObject":true,"responseSchema":true,"promptCaching":"unknown","systemMessages":true,"source":"registry"},"supplyDepth":"multi"},{"model":"mimo-v2.5-pro","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":42,"outputPriceCredits":84,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":false,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":false,"audioOutput":false,"pdfInput":false,"responseJsonObject":true,"responseSchema":true,"promptCaching":"unknown","systemMessages":true,"source":"registry"},"supplyDepth":"multi"},{"model":"minimax-m2","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":30,"outputPriceCredits":120,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"registry"},"supplyDepth":"multi"},{"model":"minimax-m2.1","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":30,"outputPriceCredits":120,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":"unknown","toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"registry"},"supplyDepth":"multi"},{"model":"minimax-m2.1-highspeed","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":60,"outputPriceCredits":240,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":"unknown","toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"registry"},"supplyDepth":"multi"},{"model":"minimax-m2.5","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":30,"outputPriceCredits":120,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":"unknown","toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"registry"},"supplyDepth":"multi"},{"model":"minimax-m2.5-highspeed","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":60,"outputPriceCredits":240,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":"unknown","toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"registry"},"supplyDepth":"multi"},{"model":"minimax-m2.7","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":30,"outputPriceCredits":120,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":"unknown","toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"registry"},"supplyDepth":"multi"},{"model":"minimax-m2.7-highspeed","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":60,"outputPriceCredits":240,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":"unknown","toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"registry"},"supplyDepth":"multi"},{"model":"minimax-m3","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":40,"outputPriceCredits":130,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":"unknown","thinking":true,"audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"registry"},"supplyDepth":"multi"},{"model":"ministral-14b-2512","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":20,"outputPriceCredits":20,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":"unknown","toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":false,"audioOutput":false,"pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":true,"systemMessages":true,"maxInputTokens":262144,"source":"registry"},"supplyDepth":"multi"},{"model":"ministral-3b-2512","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":10,"outputPriceCredits":10,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":"unknown","toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":false,"audioOutput":false,"pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":true,"systemMessages":true,"maxInputTokens":262144,"source":"registry"},"supplyDepth":"multi"},{"model":"ministral-8b-2512","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":15,"outputPriceCredits":15,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":"unknown","toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":false,"audioOutput":false,"pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":true,"systemMessages":true,"maxInputTokens":262144,"source":"registry"},"supplyDepth":"multi"},{"model":"muse-spark-1-2","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":24,"outputPriceCredits":54,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"unknown","vision":"unknown","toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"none"},"supplyDepth":"multi"},{"model":"nemotron-3-ultra","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":50,"outputPriceCredits":220,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":"unknown","toolCall":"unknown","reasoning":true,"thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"registry"},"supplyDepth":"multi"},{"model":"qwen3-coder","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":65,"outputPriceCredits":325,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"unknown","vision":"unknown","toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"none"},"supplyDepth":"multi"},{"model":"qwen3-max","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":78,"outputPriceCredits":390,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"unknown","vision":"unknown","toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"none"},"supplyDepth":"multi"},{"model":"qwen3.5-flash","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":3,"outputPriceCredits":28,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"source":"registry"},"supplyDepth":"multi"},{"model":"qwen3.5-plus","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":40,"outputPriceCredits":240,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"unknown","vision":"unknown","toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"none"},"supplyDepth":"multi"},{"model":"qwen3.6-flash","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":17,"outputPriceCredits":100,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"source":"registry"},"supplyDepth":"multi"},{"model":"qwen3.6-plus","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":50,"outputPriceCredits":300,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"registry"},"supplyDepth":"multi"},{"model":"qwen3.7-flash","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":3,"outputPriceCredits":13,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":true,"responseSchema":"unknown","promptCaching":"unknown","systemMessages":true,"maxInputTokens":1000000,"maxOutputTokens":65536,"source":"registry"},"supplyDepth":"multi"},{"model":"qwen3.7-max","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":100,"outputPriceCredits":300,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"unknown","vision":"unknown","toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"none"},"supplyDepth":"multi"},{"model":"qwen3.7-plus","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":40,"outputPriceCredits":160,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"unknown","vision":"unknown","toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"none"},"supplyDepth":"multi"},{"model":"qwen3.8-27b","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":42,"outputPriceCredits":167,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"source":"registry"},"supplyDepth":"multi"},{"model":"qwen3.8-max","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":167,"outputPriceCredits":500,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":"unknown","toolCall":true,"reasoning":true,"thinking":true,"audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"source":"registry"},"supplyDepth":"multi","outputTpsP50":102},{"model":"sensenova-6.7-flash-lite","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":10,"outputPriceCredits":40,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":true,"maxInputTokens":262144,"source":"registry"},"supplyDepth":"multi"},{"model":"sensenova-6.8-flash-lite","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":10,"outputPriceCredits":40,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":true,"source":"registry"},"supplyDepth":"multi"},{"model":"step-3.7-flash","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":20,"outputPriceCredits":115,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":true,"audioOutput":true,"pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"source":"registry"},"supplyDepth":"multi"},{"model":"claude-4.5-haiku","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":100,"outputPriceCredits":500,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":false,"audioOutput":false,"pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"source":"registry"}},{"model":"claude-4.6-opus","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":500,"outputPriceCredits":2500,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":false,"audioOutput":false,"pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"source":"registry"}},{"model":"claude-4.6-opus-thinking","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":400,"outputPriceCredits":2000,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"unknown","vision":true,"toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"inferred"}},{"model":"claude-4.7-opus","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":500,"outputPriceCredits":2500,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":false,"audioOutput":false,"pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"source":"registry"}},{"model":"claude-opus-4-5","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":500,"outputPriceCredits":2500,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":"unknown","audioOutput":"unknown","pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":200000,"maxOutputTokens":64000,"source":"registry"}},{"model":"claude-sonnet-4-20250514","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":300,"outputPriceCredits":1500,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":false,"audioOutput":false,"pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":1000000,"maxOutputTokens":64000,"source":"registry"},"sunset":{"sunsetAt":"2026-06-15","replacedBy":"claude-sonnet-5"}},{"model":"claude-sonnet-4-5","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":300,"outputPriceCredits":1500,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":false,"audioOutput":false,"pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":200000,"maxOutputTokens":64000,"source":"registry"}},{"model":"gpt-4.1","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":200,"outputPriceCredits":800,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":1047576,"maxOutputTokens":32768,"source":"litellm"}},{"model":"gpt-4.1-mini","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":40,"outputPriceCredits":160,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":1047576,"maxOutputTokens":32768,"source":"litellm"}},{"model":"gpt-4.1-nano","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":10,"outputPriceCredits":40,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":1047576,"maxOutputTokens":32768,"source":"litellm"}},{"model":"gpt-4o-mini","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":15,"outputPriceCredits":60,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":128000,"maxOutputTokens":16384,"source":"litellm"}},{"model":"gpt-5-mini","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":25,"outputPriceCredits":200,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":272000,"maxOutputTokens":128000,"source":"litellm"}},{"model":"gpt-5-nano","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":5,"outputPriceCredits":40,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":272000,"maxOutputTokens":128000,"source":"litellm"}},{"model":"gpt-5-pro","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":1500,"outputPriceCredits":12000,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"unknown","vision":true,"toolCall":true,"reasoning":true,"thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":400000,"maxOutputTokens":272000,"source":"litellm"}},{"model":"gpt-5.3-codex","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":175,"outputPriceCredits":1400,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":false,"toolCall":true,"reasoning":false,"thinking":false,"audioInput":false,"audioOutput":false,"pdfInput":false,"responseJsonObject":false,"responseSchema":false,"promptCaching":true,"systemMessages":false,"maxInputTokens":272000,"maxOutputTokens":128000,"source":"registry"}},{"model":"gpt-5.4-nano","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":20,"outputPriceCredits":125,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":272000,"maxOutputTokens":128000,"source":"litellm"}},{"model":"gemini-3-flash","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":50,"outputPriceCredits":300,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"unknown","vision":true,"toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"inferred"}},{"model":"gemini-3-pro","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":200,"outputPriceCredits":1200,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"registry"}},{"model":"gemini-3.1-pro","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":200,"outputPriceCredits":1200,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"unknown","vision":true,"toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"inferred"}},{"model":"gemini-3.6-flash","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":75,"outputPriceCredits":375,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":true,"audioOutput":false,"pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":1048576,"maxOutputTokens":65536,"source":"registry"}},{"model":"deepseek-v3.2","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":28,"outputPriceCredits":42,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"unknown","vision":"unknown","toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"none"}},{"model":"glm-4.5v","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":60,"outputPriceCredits":180,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":false,"thinking":false,"audioInput":false,"audioOutput":false,"pdfInput":false,"responseJsonObject":true,"responseSchema":true,"promptCaching":"unknown","systemMessages":true,"source":"registry"}},{"model":"glm-4.6v","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":30,"outputPriceCredits":90,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"registry"}},{"model":"doubao-seed-2.0-code","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":44,"outputPriceCredits":222,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":false,"responseSchema":false,"promptCaching":true,"systemMessages":true,"source":"registry"}},{"model":"doubao-seed-2.0-lite","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":8,"outputPriceCredits":50,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":false,"audioOutput":false,"pdfInput":"unknown","responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"source":"registry"}},{"model":"doubao-seed-2.0-pro","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":44,"outputPriceCredits":222,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":false,"responseSchema":false,"promptCaching":true,"systemMessages":true,"source":"registry"}},{"model":"doubao-seed-2.1-pro","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":83,"outputPriceCredits":417,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"source":"registry"}},{"model":"doubao-seed-2.1-turbo","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":50,"outputPriceCredits":220,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"source":"registry"}},{"model":"gemma-4-26b-a4b-it","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":0,"outputPriceCredits":0,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":true,"maxInputTokens":256000,"source":"registry"}},{"model":"gemma-4-31b-it","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":0,"outputPriceCredits":0,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":true,"maxInputTokens":256000,"source":"registry"}},{"model":"minimax-01","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":200,"outputPriceCredits":1100,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"unknown","vision":"unknown","toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"none"}},{"model":"minimax-text-01","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":200,"outputPriceCredits":1100,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":"unknown","toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"registry"}},{"model":"ox-alpha","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":60,"outputPriceCredits":220,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":false,"audioOutput":false,"pdfInput":"unknown","responseJsonObject":true,"responseSchema":false,"promptCaching":"unknown","systemMessages":"unknown","maxInputTokens":1048576,"maxOutputTokens":131072,"source":"registry"}},{"model":"qwen3.7-max-preview","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":100,"outputPriceCredits":300,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"unknown","vision":"unknown","toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"none"}},{"model":"qwen3.8-flash","availability":"verifying","pricing":{"pricingType":"token","inputPriceCredits":15,"outputPriceCredits":47,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":"unknown","toolCall":true,"reasoning":true,"thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":true,"maxInputTokens":262144,"source":"registry"}}]}</script>
+<script>
+'use strict';
+const API_URL = 'https://tokenbom.com/api/models';
+const LS_DATA = 'tokenbom_data_v1', LS_CFG = 'tokenbom_cfg_v2';
+const DEFAULTS = { creditPrice: 0.2, fx: 7.2, officialIn: 5, officialOut: 25, budget: 1200, ratio: 4 };
+
+const state = {
+  cfg: { ...DEFAULTS },
+  models: [], fetchedAt: null, source: '',
+  sort: { key: 'monthly', dir: 'asc' },
+  search: '', avail: 'all', hideSunset: false,
+};
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtNum = (v, d) => v.toLocaleString('en-US', { maximumFractionDigits: d });
+const fmtPrice = v => v === 0 ? '0' : v < 0.01 ? v.toFixed(4) : v < 1 ? v.toFixed(3) : fmtNum(v, 2);
+const fmtCNY = v => {
+  if (v === 0) return '¥0';
+  if (v < 1) return '¥' + v.toFixed(2);
+  if (v < 10000) return '¥' + fmtNum(v, 2);
+  return '¥' + fmtNum(Math.round(v), 0);
+};
+const fmtTok = n => n == null ? '' : n >= 1e6 ? (n / 1e6).toLocaleString('en-US', { maximumFractionDigits: 1 }) + 'M'
+  : n >= 1e3 ? Math.round(n / 1e3) + 'K' : String(n);
+
+function toast(msg) {
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+/* ---------- 数据装载 ---------- */
+function setData(models, fetchedAt, source) {
+  state.models = models; state.fetchedAt = fetchedAt; state.source = source;
+  try { localStorage.setItem(LS_DATA, JSON.stringify({ fetchedAt, models })); } catch (e) {}
+  renderAll();
+}
+
+function loadEmbedded() {
+  const raw = JSON.parse($('snapshot-json').textContent);
+  setData(raw.models, raw.fetchedAt || null, '内嵌快照');
+}
+
+function loadLocal() {
+  try {
+    const d = JSON.parse(localStorage.getItem(LS_DATA) || 'null');
+    if (d && Array.isArray(d.models) && d.models.length) {
+      setData(d.models, d.fetchedAt, '本地缓存');
+      return true;
+    }
+  } catch (e) {}
+  return false;
+}
+
+async function tryFetch() {
+  toast('正在拉取 tokenbom.com/api/models …');
+  try {
+    const r = await fetch(API_URL, { mode: 'cors' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const j = await r.json();
+    const models = Array.isArray(j) ? j : j.models;
+    if (!models || !models.length) throw new Error('响应中没有 models');
+    setData(models, new Date().toISOString(), '在线拉取');
+    toast('已更新：' + models.length + ' 个模型');
+  } catch (e) {
+    $('paste-panel').classList.remove('hidden');
+    toast('跨域被拦截，请用手动更新流程');
+  }
+}
+
+function parsePasted(text) {
+  const err = $('paste-err');
+  err.classList.add('hidden');
+  try {
+    let j = JSON.parse(text.trim());
+    let models = Array.isArray(j) ? j : j.models;
+    if (!models || !models.length) throw new Error('没有找到 models 数组');
+    const first = models[0];
+    if (!first.model || !first.pricing) throw new Error('数据结构与预期不符（缺少 model/pricing 字段）');
+    setData(models, new Date().toISOString(), '手动粘贴');
+    toast('已更新：' + models.length + ' 个模型');
+    $('paste-panel').classList.add('hidden');
+    $('paste-box').value = '';
+  } catch (e) {
+    err.textContent = '解析失败：' + e.message;
+    err.classList.remove('hidden');
+  }
+}
+
+/* ---------- 计算 ---------- */
+function derived(m) {
+  const c = state.cfg;
+  const creditCny = c.creditPrice / 100;                          // ¥/积分（购买价）
+  const inCny = (m.pricing.inputPriceCredits || 0) * creditCny;   // ¥/百万token
+  const outCny = (m.pricing.outputPriceCredits || 0) * creditCny;
+  const blended = (c.ratio * inCny + outCny) / (c.ratio + 1);
+  const monthly = c.budget * (c.ratio * inCny + outCny) / (c.ratio * c.officialIn + c.officialOut);  // ¥/月
+  const vs = c.budget > 0 ? monthly / (c.budget * c.fx) - 1 : 0;
+  return { inCny, outCny, blended, monthly, vs };
+}
+
+function filtered() {
+  const q = state.search.toLowerCase();
+  let list = state.models.filter(m => {
+    if (m.pricing.pricingType !== 'token') return false;
+    if (q && !m.model.toLowerCase().includes(q)) return false;
+    if (state.avail !== 'all' && m.availability !== state.avail) return false;
+    if (state.hideSunset && m.sunset) return false;
+    return true;
+  });
+  const k = state.sort.key, dir = state.sort.dir === 'asc' ? 1 : -1;
+  list.sort((a, b) => {
+    let va, vb;
+    if (k === 'model') { va = a.model; vb = b.model; return va.localeCompare(vb) * dir; }
+    const da = derived(a), db = derived(b);
+    va = da[{ in: 'inCny', out: 'outCny', blended: 'blended', monthly: 'monthly' }[k]];
+    vb = db[{ in: 'inCny', out: 'outCny', blended: 'blended', monthly: 'monthly' }[k]];
+    return (va - vb) * dir || a.model.localeCompare(b.model);
+  });
+  return list;
+}
+
+/* ---------- 渲染 ---------- */
+function chipsOf(m) {
+  const cap = m.capabilities || {};
+  const out = [];
+  if (cap.maxInputTokens) out.push(fmtTok(cap.maxInputTokens) + ' 上下文');
+  if (cap.maxOutputTokens) out.push('出 ' + fmtTok(cap.maxOutputTokens));
+  if (cap.vision) out.push('视觉');
+  if (cap.toolCall) out.push('工具');
+  if (cap.reasoning || cap.thinking) out.push('推理');
+  if (cap.pdfInput) out.push('PDF');
+  if (cap.audioInput) out.push('音频入');
+  if (cap.promptCaching === true) out.push('缓存');
+  if (m.outputTpsP50) out.push(m.outputTpsP50 + ' tps');
+  return out.map(c => '<span class="chip">' + esc(c) + '</span>').join('');
+}
+
+function availBadge(m) {
+  const map = { available: ['b-avail', '可用'], needs_supply: ['b-supply', '缺供应'], verifying: ['b-verifying', '验证中'] };
+  const [cls, label] = map[m.availability] || ['b-verifying', m.availability];
+  return '<span class="badge ' + cls + '">' + label + '</span>';
+}
+
+function renderTable() {
+  const list = filtered();
+  $('count').textContent = '显示 ' + list.length + ' / ' + state.models.length + ' 个模型（按 token 计费）';
+  const rows = list.map((m, i) => {
+    const d = derived(m);
+    const isAnchor = /opus-5/.test(m.model);
+    const isBench = Math.abs(d.vs) < 0.005;
+    let delta;
+    if (isBench) delta = '<span class="delta-zero">≈ 你的现状</span>';
+    else {
+      const pct = (d.vs * 100);
+      const rounded = Math.round(Math.abs(pct));
+      const digits = rounded >= 99 ? 1 : 0;   // 接近±100%时保留一位小数，避免误读为免费
+      const cls = d.vs < 0 ? 'delta-neg' : 'delta-pos';
+      delta = '<span class="' + cls + '">' + (pct > 0 ? '+' : '') + pct.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits }) + '%</span>';
+    }
+    const sunset = m.sunset ? '<span class="badge b-sunset" title="被 ' + esc(m.sunset.replacedBy || '') + ' 接替">下线 ' + esc((m.sunset.sunsetAt || '').slice(0, 10)) + '</span>' : '';
+    return '<tr' + (isAnchor ? ' class="bench"' : '') + '>' +
+      '<td class="l muted">' + (i + 1) + '</td>' +
+      '<td class="l"><span class="mname">' + esc(m.model) + '</span>' + (isAnchor ? '<span class="badge b-anchor" title="你在官方 API 正在用的模型">你的模型</span>' : '') + availBadge(m) + sunset + '</td>' +
+      '<td title="' + esc(m.pricing.inputPriceCredits) + ' 积分/M">¥' + fmtPrice(d.inCny) + '</td>' +
+      '<td title="' + esc(m.pricing.outputPriceCredits) + ' 积分/M">¥' + fmtPrice(d.outCny) + '</td>' +
+      '<td>¥' + fmtPrice(d.blended) + '</td>' +
+      '<td><b>' + fmtCNY(d.monthly) + '</b></td>' +
+      '<td>' + delta + '</td>' +
+      '<td class="l"><span class="chips">' + chipsOf(m) + '</span></td>' +
+      '</tr>';
+  }).join('');
+  $('tbody').innerHTML = rows || '<tr><td colspan="8" class="l muted">没有符合条件的模型</td></tr>';
+
+  document.querySelectorAll('thead th.sortable').forEach(th => {
+    const arrow = th.querySelector('.arrow');
+    arrow.textContent = th.dataset.key === state.sort.key ? (state.sort.dir === 'asc' ? '▲' : '▼') : '';
+  });
+}
+
+function renderStats() {
+  const c = state.cfg;
+  const creditCny = c.creditPrice / 100;                  // ¥/积分
+  const perOut = c.ratio * c.officialIn + c.officialOut;  // 官方每 1M 输出对应的花费($)
+  const tOut = perOut > 0 ? c.budget / perOut : 0;
+  const tIn = tOut * c.ratio;
+  const blendOffCny = perOut / (c.ratio + 1) * c.fx;
+  let discount = '';
+  const anchor = state.models.find(m => /opus-5/.test(m.model));
+  if (anchor) {
+    const db = derived(anchor).blended;
+    if (db > 0) discount = '<span>同款 opus-5 在 TokenBom：<b>¥' + fmtPrice(db) + '/M</b>，约为官方价的 <b>1/' + Math.max(1, Math.round(blendOffCny / db)) + '</b></span>';
+  }
+  $('stats').innerHTML =
+    '<span>反推你的月用量（按 ' + c.ratio + ':1）：<b>' + fmtNum(tIn, 1) + 'M 输入</b> + <b>' + fmtNum(tOut, 1) + 'M 输出</b> tokens</span>' +
+    '<span>官方 Opus 5 混合价：<b>¥' + fmtNum(blendOffCny, 1) + '/M</b>（$' + fmtNum(perOut / (c.ratio + 1), 2) + '/M）</span>' +
+    '<span>积分购买价：<b>¥' + creditCny.toFixed(4) + '/积分</b>（¥' + c.creditPrice + '/100积分）</span>' +
+    discount + '<span>月官方账单：<b>' + fmtCNY(c.budget * c.fx) + '</b>（$' + fmtNum(c.budget, 0) + '）</span>';
+}
+
+function renderPerCall() {
+  const pcs = state.models.filter(m => m.pricing.pricingType === 'per_call');
+  const sec = $('percall');
+  if (!pcs.length) { sec.classList.add('hidden'); return; }
+  sec.classList.remove('hidden');
+  const c = state.cfg;
+  const creditCny = c.creditPrice / 100;   // ¥/积分
+  $('percall-body').innerHTML = pcs.map(m => {
+    const p = m.pricing;
+    let tbl = '';
+    if (p.perCallPricingTable) {
+      const rows = Object.entries(p.perCallPricingTable)
+        .sort((a, b) => a[0].localeCompare(b[0]))
+        .map(([k, v]) => '<tr><td>' + esc(k) + '</td><td>¥' + fmtPrice(v * creditCny) + '</td></tr>').join('');
+      tbl = '<table class="pc-table"><tr><th>质量:尺寸</th><th>单价/次</th></tr>' + rows + '</table>';
+    }
+    let img = '';
+    if (p.imageTokenPricing) {
+      const ip = p.imageTokenPricing;
+      img = '<div class="muted" style="margin:4px 0 8px 12px">token 计费：文本输入 ¥' + fmtPrice((ip.textInputCredits || 0) * creditCny) +
+        ' / 图片输入 ¥' + fmtPrice((ip.imageInputCredits || 0) * creditCny) +
+        ' / 图片输出 ¥' + fmtPrice((ip.imageOutputCredits || 0) * creditCny) + ' 每百万 token</div>';
+    }
+    return '<div class="pc-model">' + esc(m.model) + ' ' + availBadge(m) + '</div>' + tbl + img;
+  }).join('');
+}
+
+function renderStatus() {
+  const when = state.fetchedAt ? new Date(state.fetchedAt).toLocaleString('zh-CN', { hour12: false }) : '未知时间';
+  $('data-status').textContent = '数据来源：' + state.source + ' · ' + when + ' · 共 ' + state.models.length + ' 个模型';
+}
+
+function renderAll() { renderStats(); renderTable(); renderPerCall(); renderStatus(); renderAssumptions(); }
+
+function renderAssumptions() {
+  const c = state.cfg;
+  $('assumptions').innerHTML =
+    '<b>估算口径</b>：你目前在官方 API 用 Opus 5 每月约 ' + fmtCNY(c.budget * c.fx) +
+    '（$' + fmtNum(c.budget, 0) + '，官方价假设 $' + c.officialIn + '/M 输入、$' + c.officialOut + '/M 输出），按输入:输出 = ' + c.ratio +
+    ':1 反推月 token 用量。「预计月成本」= 同样的 token 量在 TokenBom 按积分计费的花费：模型单价来自 API（积分/百万 token，即站面显示的 积分/K ×1000），'
+    + '积分按购买价折算（¥' + c.creditPrice + '/100积分，即 1 积分 ¥' + (c.creditPrice / 100).toFixed(4) +
+    '）。注意 TokenBom 积分定价远低于官方价（约 1/30 ~ 1/50），所以同一模型在这里跑通常只有官方账单的百分之几。'
+    + '「对比官方账单」= 相对你每月 ' + fmtCNY(c.budget * c.fx) + ' 官方账单的增减。比例、积分售价、官方单价都可在上方调整。';
+}
+
+/* ---------- 导出 ---------- */
+function currentRows() { return filtered().map(m => ({ m, d: derived(m) })); }
+
+function downloadCSV() {
+  const head = ['model', 'availability', 'input_credits_per_M', 'output_credits_per_M',
+    'input_cny_per_M', 'output_cny_per_M', 'blended_cny_per_M', 'est_monthly_cny', 'vs_official_bill',
+    'max_input_tokens', 'max_output_tokens', 'output_tps_p50', 'sunset_at', 'replaced_by'];
+  const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+  const lines = [head.join(',')];
+  currentRows().forEach(({ m, d }) => {
+    lines.push([m.model, m.availability, m.pricing.inputPriceCredits, m.pricing.outputPriceCredits,
+      d.inCny.toFixed(4), d.outCny.toFixed(4), d.blended.toFixed(4), d.monthly.toFixed(2),
+      (d.vs * 100).toFixed(1) + '%',
+      m.capabilities && m.capabilities.maxInputTokens || '', m.capabilities && m.capabilities.maxOutputTokens || '',
+      m.outputTpsP50 == null ? '' : m.outputTpsP50,
+      m.sunset && m.sunset.sunsetAt || '', m.sunset && m.sunset.replacedBy || ''].map(q).join(','));
+  });
+  const blob = new Blob(['\uFEFF' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  const day = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  a.download = 'tokenbom_prices_' + day + '.csv';
+  a.click(); URL.revokeObjectURL(a.href);
+  toast('CSV 已下载（' + (lines.length - 1) + ' 行）');
+}
+
+function copyMarkdown() {
+  const rows = currentRows();
+  let md = '| 模型 | 输入 ¥/M | 输出 ¥/M | 混合 ¥/M | 预计月成本(¥) | 对比官方账单 |\n|---|---|---|---|---|---|\n';
+  rows.forEach(({ m, d }) => {
+    const pct = d.vs * 100;
+    const digits = Math.round(Math.abs(pct)) >= 99 ? 1 : 0;
+    md += '| ' + m.model + ' | ¥' + fmtPrice(d.inCny) + ' | ¥' + fmtPrice(d.outCny) + ' | ¥' + fmtPrice(d.blended) +
+      ' | ' + fmtCNY(d.monthly) + ' | ' + (Math.abs(d.vs) < 0.005 ? '≈官方' : (pct > 0 ? '+' : '') + pct.toFixed(digits) + '%') + ' |\n';
+  });
+  const done = () => toast('已复制 Markdown（' + rows.length + ' 行）');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(md).then(done).catch(() => fallbackCopy(md, done));
+  } else fallbackCopy(md, done);
+}
+function fallbackCopy(text, done) {
+  const ta = document.createElement('textarea');
+  ta.value = text; document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); done(); } catch (e) { toast('复制失败，请手动选择'); }
+  document.body.removeChild(ta);
+}
+
+/* ---------- 控件绑定 ---------- */
+function bindParams() {
+  const c = state.cfg;
+  const fields = { creditPrice: 'creditPrice', fx: 'fx', offin: 'officialIn', offout: 'officialOut', budget: 'budget', ratio: 'ratio' };
+  for (const [id, key] of Object.entries(fields)) {
+    const el = $(id);
+    el.value = c[key];
+    el.addEventListener('input', () => {
+      const v = parseFloat(el.value);
+      if (!isNaN(v) && v >= 0) { c[key] = v; saveCfg(); renderAll(); }
+      if (id === 'ratio') $('ratio-label').textContent = c.ratio + ':1';
+    });
+  }
+  $('ratio-label').textContent = c.ratio + ':1';
+}
+function saveCfg() { try { localStorage.setItem(LS_CFG, JSON.stringify(state.cfg)); } catch (e) {} }
+function loadCfg() {
+  try {
+    const c = JSON.parse(localStorage.getItem(LS_CFG) || 'null');
+    if (c && typeof c === 'object') for (const k of Object.keys(DEFAULTS))
+      if (typeof c[k] === 'number' && c[k] >= 0) state.cfg[k] = c[k];
+  } catch (e) {}
+}
+
+function bindRest() {
+  document.querySelectorAll('thead th.sortable').forEach(th =>
+    th.addEventListener('click', () => {
+      const k = th.dataset.key;
+      if (state.sort.key === k) state.sort.dir = state.sort.dir === 'asc' ? 'desc' : 'asc';
+      else state.sort = { key: k, dir: k === 'model' ? 'asc' : 'asc' };
+      renderTable();
+    }));
+  $('search').addEventListener('input', e => { state.search = e.target.value.trim(); renderTable(); });
+  $('avail').addEventListener('change', e => { state.avail = e.target.value; renderTable(); });
+  $('hidesunset').addEventListener('change', e => { state.hideSunset = e.target.checked; renderTable(); });
+  $('btn-refresh').addEventListener('click', tryFetch);
+  $('btn-csv').addEventListener('click', downloadCSV);
+  $('btn-md').addEventListener('click', copyMarkdown);
+  $('btn-reset').addEventListener('click', () => {
+    state.cfg = { ...DEFAULTS }; saveCfg(); bindParamsValues(); renderAll(); toast('已恢复默认参数');
+  });
+  $('btn-parse').addEventListener('click', () => parsePasted($('paste-box').value));
+  $('btn-clip').addEventListener('click', async () => {
+    try {
+      const t = await navigator.clipboard.readText();
+      if (t && t.trim()) parsePasted(t);
+      else toast('剪贴板是空的');
+    } catch (e) { toast('无法读剪贴板，请 Ctrl+V 粘贴到输入框'); $('paste-box').focus(); }
+  });
+  $('btn-restore').addEventListener('click', () => {
+    loadEmbedded(); $('paste-panel').classList.add('hidden'); toast('已恢复内嵌快照');
+  });
+  $('open-api').href = API_URL;
+}
+function bindParamsValues() {
+  $('creditPrice').value = state.cfg.creditPrice; $('fx').value = state.cfg.fx;
+  $('offin').value = state.cfg.officialIn;
+  $('offout').value = state.cfg.officialOut; $('budget').value = state.cfg.budget;
+  $('ratio').value = state.cfg.ratio; $('ratio-label').textContent = state.cfg.ratio + ':1';
+}
+
+/* ---------- 启动 ---------- */
+loadCfg();
+bindParams();
+bindRest();
+if (!loadLocal()) loadEmbedded();
+</script>
+</body>
+</html>
