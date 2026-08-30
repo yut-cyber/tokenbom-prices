@@ -21,6 +21,20 @@ function toast(msg) {
   clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 2200);
 }
 
+function openPaste() { $('paste-panel').classList.remove('hidden'); }
+function closePaste() { $('paste-panel').classList.add('hidden'); }
+
+const LS_THEME = 'tokenbom_theme';
+function applyTheme(mode) {
+  document.documentElement.classList.toggle('dark', mode === 'dark');
+  try { localStorage.setItem(LS_THEME, mode); } catch (e) {}
+}
+function toggleTheme() {
+  const dark = document.documentElement.classList.contains('dark');
+  applyTheme(dark ? 'light' : 'dark');
+  toast(dark ? '已切换到浅色主题' : '已切换到深色主题');
+}
+
 /* ---------- 数据装载 ---------- */
 function setData(models, fetchedAt, source) {
   state.models = models; state.fetchedAt = fetchedAt; state.source = source;
@@ -55,7 +69,7 @@ async function tryFetch() {
     setData(models, new Date().toISOString(), '在线拉取');
     toast('已更新：' + models.length + ' 个模型');
   } catch (e) {
-    $('paste-panel').classList.remove('hidden');
+    openPaste();
     toast('跨域被拦截，请用手动更新流程');
   }
 }
@@ -71,7 +85,7 @@ function parsePasted(text) {
     if (!first.model || !first.pricing) throw new Error('数据结构与预期不符（缺少 model/pricing 字段）');
     setData(models, new Date().toISOString(), '手动粘贴');
     toast('已更新：' + models.length + ' 个模型');
-    $('paste-panel').classList.add('hidden');
+    closePaste();
     $('paste-box').value = '';
   } catch (e) {
     err.textContent = '解析失败：' + e.message;
@@ -117,36 +131,38 @@ function chipsOf(m) {
 }
 
 function availBadge(m) {
-  const map = { available: ['b-avail', '可用'], needs_supply: ['b-supply', '缺供应'], verifying: ['b-verifying', '验证中'] };
-  const [cls, label] = map[m.availability] || ['b-verifying', m.availability];
+  const map = { available: ['badge-avail', '可用'], needs_supply: ['badge-supply', '缺供应'], verifying: ['badge-verifying', '验证中'] };
+  const [cls, label] = map[m.availability] || ['badge-verifying', m.availability];
   return '<span class="badge ' + cls + '">' + label + '</span>';
 }
 
 function renderTable() {
   const list = filtered();
-  $('count').textContent = '显示 ' + list.length + ' / ' + state.models.length + ' 个模型（按 token 计费）';
+  $('count').textContent = '显示 ' + list.length + ' 个模型';
   const rows = list.map((m, i) => {
     const d = derived(m, state.cfg);
     let delta;
     if (state.cfg.currentSpend <= 0) delta = '<span class="delta-zero">—</span>';
-    else if (Math.abs(d.vs) < 0.005) delta = '<span class="delta-zero">≈ 你的现状</span>';
+    else if (Math.abs(d.vs) < 0.005) delta = '<span class="delta-zero">≈ 当前</span>';
     else {
       const cls = d.vs < 0 ? 'delta-neg' : 'delta-pos';
       delta = '<span class="' + cls + '">' + calc.deltaPercent(d.vs) + '%</span>';
     }
-    const sunset = m.sunset ? '<span class="badge b-sunset" title="被 ' + esc(m.sunset.replacedBy || '') + ' 接替">下线 ' + esc((m.sunset.sunsetAt || '').slice(0, 10)) + '</span>' : '';
+    const ctx = m.capabilities && m.capabilities.maxInputTokens ? fmtTok(m.capabilities.maxInputTokens) : '—';
+    const sunset = m.sunset ? '<span class="badge badge-sunset" title="被 ' + esc(m.sunset.replacedBy || '') + ' 接替">下线 ' + esc((m.sunset.sunsetAt || '').slice(0, 10)) + '</span>' : '';
     return '<tr>' +
       '<td class="l muted">' + (i + 1) + '</td>' +
-      '<td class="l"><span class="mname">' + esc(m.model) + '</span>' + availBadge(m) + sunset + '</td>' +
+      '<td class="l"><span class="mname">' + esc(m.model) + '</span><div class="mnote">' + chipsOf(m) + '</div></td>' +
       '<td title="' + esc(m.pricing.inputPriceCredits) + ' 积分/M">¥' + fmtPrice(d.inCny) + '</td>' +
       '<td title="' + esc(m.pricing.outputPriceCredits) + ' 积分/M">¥' + fmtPrice(d.outCny) + '</td>' +
       '<td>¥' + fmtPrice(d.blended) + '</td>' +
       '<td><b>' + fmtCNY(d.monthly) + '</b></td>' +
       '<td>' + delta + '</td>' +
-      '<td class="l"><span class="chips">' + chipsOf(m) + '</span></td>' +
+      '<td class="muted">' + ctx + '</td>' +
+      '<td>' + availBadge(m) + sunset + '</td>' +
       '</tr>';
   }).join('');
-  $('tbody').innerHTML = rows || '<tr><td colspan="8" class="l muted">没有符合条件的模型</td></tr>';
+  $('tbody').innerHTML = rows || '<tr><td colspan="9" class="l muted">没有符合条件的模型</td></tr>';
 
   document.querySelectorAll('thead th.sortable').forEach(th => {
     const arrow = th.querySelector('.arrow');
@@ -154,21 +170,30 @@ function renderTable() {
   });
 }
 
-function renderStats() {
+function renderKpis() {
   const c = state.cfg;
-  const creditCny = calc.creditCnyOf(c.creditPrice);
   const { tIn, tOut } = calc.splitUsage(c.monthlyTokens);
-  let anchor = '';
-  const ref = state.models.find(m => /opus-5/.test(m.model));
-  if (ref) {
-    const d = derived(ref, c);
-    anchor = '<span>同款 opus-5 月成本：<b>' + fmtCNY(d.monthly) + '</b>（混合 ¥' + fmtPrice(d.blended) + '/M）</span>';
+  $('kpi-usage').textContent = fmtNum(c.monthlyTokens, 1) + 'M';
+  $('kpi-usage-sub').textContent = 'tokens / 月（4:1 → ' + fmtNum(tIn, 1) + 'M 入 + ' + fmtNum(tOut, 1) + 'M 出）';
+  $('kpi-spend').textContent = fmtCNY(c.currentSpend);
+  $('banner-sub').textContent = '覆盖 ' + state.models.length + ' 个主流 AI 模型的实时定价对比，按预估月度成本排序。数据基于 ' +
+    fmtNum(c.monthlyTokens, 1) + 'M tokens/月，输入输出 4:1 配比。';
+
+  const list = filtered();
+  if (!list.length || c.monthlyTokens <= 0) {
+    $('kpi-min').textContent = '—'; $('kpi-min-sub').textContent = '—';
+    $('kpi-max').textContent = '—'; $('kpi-max-sub').textContent = '—';
+    return;
   }
-  $('stats').innerHTML =
-    '<span>月用量（4:1 拆分）：<b>' + fmtNum(tIn, 1) + 'M 输入</b> + <b>' + fmtNum(tOut, 1) + 'M 输出</b> tokens</span>' +
-    '<span>积分购买价：<b>¥' + creditCny.toFixed(4) + '/积分</b>（¥' + c.creditPrice + '/100积分，汇率固定 7.2）</span>' +
-    '<span>现行月花费：<b>' + fmtCNY(c.currentSpend) + '</b></span>' +
-    anchor;
+  const priced = list.map(m => ({ m, d: derived(m, c) }));
+  const min = priced.reduce((a, b) => (b.d.monthly < a.d.monthly ? b : a));
+  const max = priced.reduce((a, b) => (b.d.monthly > a.d.monthly ? b : a));
+  const pctOf = d => c.currentSpend > 0 ? Math.abs(d.monthly / c.currentSpend - 1) * 100 : null;
+  const minPct = pctOf(min.d), maxPct = pctOf(max.d);
+  $('kpi-min').textContent = fmtCNY(min.d.monthly);
+  $('kpi-min-sub').innerHTML = esc(min.m.model) + (minPct != null ? ' · 节省 <b>' + fmtNum(minPct, 1) + '%</b>' : '');
+  $('kpi-max').textContent = fmtCNY(max.d.monthly);
+  $('kpi-max-sub').innerHTML = esc(max.m.model) + (maxPct != null ? ' · <span class="up">溢价 ' + fmtNum(maxPct, 1) + '%</span>' : '');
 }
 
 function renderPerCall() {
@@ -176,34 +201,45 @@ function renderPerCall() {
   const sec = $('percall');
   if (!pcs.length) { sec.classList.add('hidden'); return; }
   sec.classList.remove('hidden');
-  const c = state.cfg;
-  const creditCny = calc.creditCnyOf(c.creditPrice);
-  $('percall-body').innerHTML = pcs.map(m => {
+  const creditCny = calc.creditCnyOf(state.cfg.creditPrice);
+  const rows = [];
+  pcs.forEach(m => {
     const p = m.pricing;
-    let tbl = '';
     if (p.perCallPricingTable) {
-      const rows = Object.entries(p.perCallPricingTable)
+      Object.entries(p.perCallPricingTable)
         .sort((a, b) => a[0].localeCompare(b[0]))
-        .map(([k, v]) => '<tr><td>' + esc(k) + '</td><td>¥' + fmtPrice(v * creditCny) + '</td></tr>').join('');
-      tbl = '<table class="pc-table"><tr><th>质量:尺寸</th><th>单价/次</th></tr>' + rows + '</table>';
+        .forEach(([k, v]) => {
+          const parts = k.split(':');
+          rows.push('<tr>' +
+            '<td class="l"><span class="mname">' + esc(m.model) + '</span></td>' +
+            '<td>' + esc(parts[0] || '—') + '</td>' +
+            '<td>' + esc(parts[1] || '—') + '</td>' +
+            '<td>¥' + fmtPrice(v * creditCny) + '</td>' +
+            '<td>' + availBadge(m) + '</td>' +
+            '</tr>');
+        });
     }
-    let img = '';
     if (p.imageTokenPricing) {
       const ip = p.imageTokenPricing;
-      img = '<div class="muted" style="margin:4px 0 8px 12px">token 计费：文本输入 ¥' + fmtPrice((ip.textInputCredits || 0) * creditCny) +
-        ' / 图片输入 ¥' + fmtPrice((ip.imageInputCredits || 0) * creditCny) +
-        ' / 图片输出 ¥' + fmtPrice((ip.imageOutputCredits || 0) * creditCny) + ' 每百万 token</div>';
+      rows.push('<tr>' +
+        '<td class="l"><span class="mname">' + esc(m.model) + '</span><div class="mnote"><span class="chip">图像 token 计费</span></div></td>' +
+        '<td colspan="2" class="l muted" style="white-space:normal">文本 ¥' + fmtPrice((ip.textInputCredits || 0) * creditCny) +
+        ' / 图入 ¥' + fmtPrice((ip.imageInputCredits || 0) * creditCny) + ' / 图出 ¥' + fmtPrice((ip.imageOutputCredits || 0) * creditCny) + ' 每百万</td>' +
+        '<td>—</td><td>' + availBadge(m) + '</td>' +
+        '</tr>');
     }
-    return '<div class="pc-model">' + esc(m.model) + ' ' + availBadge(m) + '</div>' + tbl + img;
-  }).join('');
+  });
+  $('percall-body').innerHTML = '<table class="pc-table"><thead><tr>' +
+    '<th class="l">模型</th><th>质量</th><th>尺寸</th><th>单价 (¥)</th><th>状态</th>' +
+    '</tr></thead><tbody>' + (rows.join('') || '<tr><td colspan="5" class="l muted">无</td></tr>') + '</tbody></table>';
 }
 
 function renderStatus() {
   const when = state.fetchedAt ? new Date(state.fetchedAt).toLocaleString('zh-CN', { hour12: false }) : '未知时间';
-  $('data-status').textContent = '数据来源：' + state.source + ' · v' + VERSION + ' · ' + when + ' · 共 ' + state.models.length + ' 个模型';
+  $('data-status').textContent = '来源：' + state.source + ' · ' + when + ' · 共 ' + state.models.length + ' 个模型 · v' + VERSION;
 }
 
-function renderAll() { renderStats(); renderTable(); renderPerCall(); renderStatus(); renderAssumptions(); }
+function renderAll() { renderKpis(); renderTable(); renderPerCall(); renderStatus(); renderAssumptions(); }
 
 function renderAssumptions() {
   const c = state.cfg;
@@ -296,10 +332,28 @@ function bindRest() {
       else state.sort = { key: k, dir: k === 'model' ? 'asc' : 'asc' };
       renderTable();
     }));
-  $('search').addEventListener('input', e => { state.search = e.target.value.trim(); renderTable(); });
-  $('avail').addEventListener('change', e => { state.avail = e.target.value; renderTable(); });
-  $('hidesunset').addEventListener('change', e => { state.hideSunset = e.target.checked; renderTable(); });
+  $('search').addEventListener('input', e => { state.search = e.target.value.trim(); renderTable(); renderKpis(); });
+  document.querySelectorAll('#avail-tabs .tab').forEach(tab =>
+    tab.addEventListener('click', () => {
+      state.avail = tab.dataset.avail;
+      document.querySelectorAll('#avail-tabs .tab').forEach(t => {
+        const on = t === tab;
+        t.classList.toggle('active', on);
+        t.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+      renderTable(); renderKpis();
+    }));
+  $('hidesunset').addEventListener('change', e => { state.hideSunset = e.target.checked; renderTable(); renderKpis(); });
   $('btn-refresh').addEventListener('click', tryFetch);
+  $('btn-refresh-side').addEventListener('click', tryFetch);
+  $('btn-theme').addEventListener('click', toggleTheme);
+  $('btn-paste').addEventListener('click', openPaste);
+  $('btn-paste-close').addEventListener('click', closePaste);
+  $('paste-panel').addEventListener('click', e => { if (e.target === $('paste-panel')) closePaste(); });
+  document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) { e.preventDefault(); $('search').focus(); }
+    if (e.key === 'Escape') closePaste();
+  });
   $('btn-csv').addEventListener('click', downloadCSV);
   $('btn-md').addEventListener('click', copyMarkdown);
   $('btn-reset').addEventListener('click', () => {
@@ -313,9 +367,9 @@ function bindRest() {
       else toast('剪贴板是空的');
     } catch (e) { toast('无法读剪贴板，请 Ctrl+V 粘贴到输入框'); $('paste-box').focus(); }
   });
-  $('btn-restore').addEventListener('click', () => {
-    loadEmbedded(); $('paste-panel').classList.add('hidden'); toast('已恢复内嵌快照');
-  });
+  const restoreSnap = () => { loadEmbedded(); closePaste(); toast('已恢复内嵌快照'); };
+  $('btn-restore').addEventListener('click', restoreSnap);
+  $('btn-snapshot').addEventListener('click', restoreSnap);
   $('open-api').href = API_URL;
 }
 function bindParamsValues() {

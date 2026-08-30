@@ -4,98 +4,218 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="TokenBom 模型价格榜 · 月成本估算（单文件纯前端工具）">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%8A%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23c96442'/%3E%3Ctext x='50' y='68' font-size='58' text-anchor='middle' fill='%23fff' font-family='Georgia,serif'%3ET%3C/text%3E%3C/svg%3E">
 <title>TokenBom 模型价格榜 · 月成本估算</title>
-<style>/*__INLINE_CSS__*/</style>
+<script>
+(function(){var t=null;try{t=localStorage.getItem('tokenbom_theme')}catch(e){}
+if(t==='dark'||(!t&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')})();
+</script>
+<style>
+/*__INLINE_CSS__*/
+</style>
 </head>
 <body>
-<div class="wrap">
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+  <defs>
+    <symbol id="i-tag" viewBox="0 0 24 24"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></symbol>
+    <symbol id="i-swap" viewBox="0 0 24 24"><path d="m8 3 4 4-4 4"/><path d="M4 7h16"/><path d="m16 21-4-4 4-4"/><path d="M20 17H4"/></symbol>
+    <symbol id="i-calc" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></symbol>
+    <symbol id="i-sliders" viewBox="0 0 24 24"><line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><line x1="14" x2="14" y1="2" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="16" x2="16" y1="18" y2="22"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect width="13" height="13" x="9" y="9" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+  </defs>
+</svg>
 
-<header>
-  <div>
-    <h1><a href="https://tokenbom.com/dashboard" target="_blank" rel="noopener">TokenBom</a> 模型价格榜 · 月成本估算</h1>
-    <div class="status" id="data-status">加载中…</div>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo">T</div>
+      <div>
+        <div class="brand-name">TokenBom</div>
+        <div class="brand-sub">pricing-dashboard v<span class="v">1.2.0</span></div>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <div>
+        <div class="nav-group">定价</div>
+        <div class="nav-items">
+          <button class="nav-item active" type="button"><svg><use href="#i-tag"/></svg>模型价格榜</button>
+          <button class="nav-item disabled" type="button" disabled><svg><use href="#i-chart"/></svg>价格趋势<span class="soon">即将上线</span></button>
+          <button class="nav-item disabled" type="button" disabled><svg><use href="#i-swap"/></svg>模型对比<span class="soon">即将上线</span></button>
+        </div>
+      </div>
+      <div>
+        <div class="nav-group">工具</div>
+        <div class="nav-items">
+          <button class="nav-item disabled" type="button" disabled><svg><use href="#i-calc"/></svg>成本计算器<span class="soon">即将上线</span></button>
+          <button class="nav-item disabled" type="button" disabled><svg><use href="#i-heart"/></svg>收藏列表<span class="soon">即将上线</span></button>
+        </div>
+      </div>
+      <div>
+        <div class="nav-group">设置</div>
+        <div class="nav-items">
+          <button class="nav-item disabled" type="button" disabled><svg><use href="#i-sliders"/></svg>偏好设置<span class="soon">即将上线</span></button>
+        </div>
+      </div>
+    </nav>
+
+    <div class="side-card" id="params-card">
+      <div class="card-title">估算参数</div>
+      <label class="field"><span>积分售价（¥/100积分）</span>
+        <select id="creditTier">
+          <option value="0.2">¥0.20 / 100积分</option>
+          <option value="0.18">¥0.18 / 100积分</option>
+          <option value="0.16">¥0.16 / 100积分</option>
+          <option value="0.14">¥0.14 / 100积分</option>
+        </select>
+      </label>
+      <label class="field"><span>我的模型月用量</span>
+        <span class="field-affix"><input type="number" id="monthlyTokens" step="10" min="0"><em>M tokens/月</em></span>
+      </label>
+      <label class="field"><span>现行月花费</span>
+        <span class="field-affix"><em>¥</em><input type="number" id="currentSpend" step="10" min="0"><em>/月</em></span>
+      </label>
+      <button class="btn btn-ghost btn-sm w-full" id="btn-reset" type="button">恢复默认</button>
+      <p class="rule-note">口径：月总用量按 <b>4:1</b> 拆分 → <b>月成本 = 输入M×输入价 + 输出M×输出价</b>（积分按档位折算，汇率固定 7.2）。</p>
+    </div>
+
+    <div class="side-card primary">
+      <div class="card-title">数据更新</div>
+      <p class="muted" id="data-status" style="margin:0;font-size:12.3px;line-height:1.6">加载中…</p>
+      <button class="btn btn-secondary btn-sm w-full" id="btn-refresh-side" type="button"><svg><use href="#i-refresh"/></svg>手动刷新</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost btn-sm" id="btn-paste" type="button" style="flex:1;border:1px solid rgba(255,255,255,.3);color:inherit">粘贴数据</button>
+        <button class="btn btn-ghost btn-sm" id="btn-snapshot" type="button" style="flex:1;border:1px solid rgba(255,255,255,.3);color:inherit">恢复快照</button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main-col">
+    <header class="topbar">
+      <div class="searchbox">
+        <svg><use href="#i-search"/></svg>
+        <input type="text" id="search" placeholder="搜索模型名称..." autocomplete="off">
+        <span class="kbd">Ctrl+K</span>
+      </div>
+      <div class="topbar-actions">
+        <button class="icon-btn" id="btn-theme" type="button" aria-label="切换深浅主题">
+          <svg class="icon-moon"><use href="#i-moon"/></svg>
+          <svg class="icon-sun"><use href="#i-sun"/></svg>
+        </button>
+        <button class="btn btn-outline" id="btn-md" type="button"><svg><use href="#i-copy"/></svg>复制 Markdown</button>
+        <button class="btn btn-primary" id="btn-csv" type="button"><svg><use href="#i-download"/></svg>导出 CSV</button>
+      </div>
+    </header>
+
+    <main class="content">
+      <section class="banner">
+        <div style="min-width:0">
+          <p class="eyebrow">定价仪表盘</p>
+          <h1>AI 模型价格榜</h1>
+          <p class="banner-sub" id="banner-sub">覆盖 120+ 主流 AI 模型的实时定价对比，按预估月度成本排序。数据基于 133.3M tokens/月，输入输出 4:1 配比。</p>
+        </div>
+        <button class="btn btn-primary" id="btn-refresh" type="button"><svg><use href="#i-refresh"/></svg>刷新价格</button>
+      </section>
+
+      <section class="kpis">
+        <div class="kpi">
+          <p class="kpi-label">月度用量</p>
+          <p class="kpi-value" id="kpi-usage">—</p>
+          <p class="kpi-sub" id="kpi-usage-sub">tokens / 月</p>
+        </div>
+        <div class="kpi">
+          <p class="kpi-label">当前月度成本</p>
+          <p class="kpi-value" id="kpi-spend">—</p>
+          <p class="kpi-sub">现行月花费 · 手填基准</p>
+        </div>
+        <div class="kpi">
+          <p class="kpi-label">最低成本模型</p>
+          <p class="kpi-value" id="kpi-min">—</p>
+          <p class="kpi-sub" id="kpi-min-sub">—</p>
+        </div>
+        <div class="kpi">
+          <p class="kpi-label">最高成本模型</p>
+          <p class="kpi-value" id="kpi-max">—</p>
+          <p class="kpi-sub" id="kpi-max-sub">—</p>
+        </div>
+      </section>
+
+      <section class="toolbar">
+        <div class="tabs" role="tablist" aria-label="状态筛选" id="avail-tabs">
+          <button class="tab active" role="tab" data-avail="all" aria-selected="true" type="button">全部状态</button>
+          <button class="tab" role="tab" data-avail="available" aria-selected="false" type="button">仅可用</button>
+          <button class="tab" role="tab" data-avail="needs_supply" aria-selected="false" type="button">仅缺供应</button>
+          <button class="tab" role="tab" data-avail="verifying" aria-selected="false" type="button">仅验证中</button>
+          <label class="hide-sunset"><input type="checkbox" id="hidesunset">隐藏将下线模型</label>
+        </div>
+        <span class="count" id="count"></span>
+      </section>
+
+      <section class="table-card">
+        <div class="table-scroll">
+          <table id="tbl">
+            <thead><tr>
+              <th class="l">#</th>
+              <th class="l sortable" data-key="model">模型名称 <span class="arrow"></span></th>
+              <th class="sortable" data-key="in">输入 ¥/M <span class="arrow"></span></th>
+              <th class="sortable" data-key="out">输出 ¥/M <span class="arrow"></span></th>
+              <th class="sortable" data-key="blended">混合 ¥/M <span class="arrow"></span></th>
+              <th class="sortable" data-key="monthly">月成本 (¥) <span class="arrow"></span></th>
+              <th title="相对你填写的现行月花费的增减">vs 当前</th>
+              <th>上下文</th>
+              <th>状态</th>
+            </tr></thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="table-card hidden" id="percall">
+        <div class="table-card-head">
+          <h2>按次计费模型</h2>
+          <span class="badge badge-muted">按次计费</span>
+        </div>
+        <div class="table-scroll" id="percall-body"></div>
+      </section>
+
+      <footer class="page-foot" id="assumptions"></footer>
+    </main>
   </div>
-  <div class="actions">
-    <button class="primary" id="btn-refresh">🔄 拉取最新价格</button>
-    <button id="btn-csv">⬇ 下载 CSV</button>
-    <button id="btn-md">⧉ 复制 Markdown</button>
-  </div>
-</header>
-
-<section class="card">
-  <div class="params">
-    <span class="param"><label>积分售价</label>
-      <select id="creditTier">
-        <option value="0.2">¥0.20 / 100积分</option>
-        <option value="0.18">¥0.18 / 100积分</option>
-        <option value="0.16">¥0.16 / 100积分</option>
-        <option value="0.14">¥0.14 / 100积分</option>
-      </select>
-    </span>
-    <span class="param"><label>我的模型月用量</label><input type="number" id="monthlyTokens" step="10" min="0"> M tokens/月</span>
-    <span class="param"><label>现行月花费</label>¥<input type="number" id="currentSpend" step="10" min="0"> /月</span>
-    <span class="param"><button id="btn-reset">恢复默认</button></span>
-  </div>
-  <p class="rule-note">口径：月总用量按 <b>4:1</b> 拆分为输入/输出 → <b>月成本 = 输入M×输入价 + 输出M×输出价</b>（积分按所选档位折算为人民币，汇率固定 7.2）；「对比」列 = 相对你填写的现行月花费的增减。</p>
-  <div class="stats" id="stats"></div>
-</section>
-
-<section class="card filters">
-  <input type="text" id="search" placeholder="🔍 搜索模型名…">
-  <select id="avail">
-    <option value="all">全部状态</option>
-    <option value="available">仅可用</option>
-    <option value="needs_supply">仅缺供应</option>
-    <option value="verifying">仅验证中</option>
-  </select>
-  <label><input type="checkbox" id="hidesunset">隐藏将下线模型</label>
-  <span class="count" id="count"></span>
-</section>
-
-<section class="card hidden" id="paste-panel">
-  <h2>⚠️ 浏览器拦截了跨域请求（CORS），改用手动更新（约 10 秒）</h2>
-  <ol>
-    <li><a href="#" id="open-api" target="_blank" rel="noopener">点这里在新标签页打开 API 数据页</a></li>
-    <li>在那一页 <b>Ctrl+A 全选 → Ctrl+C 复制</b></li>
-    <li>回到本页，点「从剪贴板读取」，或直接在下面 Ctrl+V 后点「解析」</li>
-  </ol>
-  <textarea id="paste-box" placeholder='粘贴 JSON，形如 {"models":[...]}` 或直接 `[ {...} ]`'></textarea>
-  <div class="paste-row">
-    <button class="primary" id="btn-clip">📋 从剪贴板读取</button>
-    <button id="btn-parse">解析并更新</button>
-    <button id="btn-restore">恢复内嵌快照</button>
-    <span class="err hidden" id="paste-err"></span>
-  </div>
-</section>
-
-<div class="card table-wrap">
-  <table id="tbl">
-    <thead><tr>
-      <th class="l">#</th>
-      <th class="l sortable" data-key="model">模型 <span class="arrow"></span></th>
-      <th class="sortable" data-key="in">输入 ¥/M <span class="arrow"></span></th>
-      <th class="sortable" data-key="out">输出 ¥/M <span class="arrow"></span></th>
-      <th class="sortable" data-key="blended">混合 ¥/M <span class="arrow"></span></th>
-      <th class="sortable" data-key="monthly">预计月成本(¥) <span class="arrow"></span></th>
-      <th title="相对你填写的现行月花费的增减">对比现行花费</th>
-      <th class="l">上下文 / 能力</th>
-    </tr></thead>
-    <tbody id="tbody"></tbody>
-  </table>
 </div>
 
-<section class="card hidden" id="percall">
-  <h2>按次计费模型（不参与按 token 的月成本估算）</h2>
-  <div id="percall-body"></div>
-</section>
-
-<footer id="assumptions"></footer>
-
+<div id="paste-panel" class="modal-overlay hidden">
+  <div class="modal-card">
+    <h2><svg><use href="#i-alert"/></svg>浏览器拦截了跨域请求（CORS）</h2>
+    <ol>
+      <li><a href="#" id="open-api" target="_blank" rel="noopener">点这里在新标签页打开 API 数据页</a></li>
+      <li>在那一页 <b>Ctrl+A 全选 → Ctrl+C 复制</b></li>
+      <li>回到本页点「从剪贴板读取」，或直接在下面 Ctrl+V 后点「解析并更新」</li>
+    </ol>
+    <textarea id="paste-box" placeholder='粘贴 JSON，形如 {"models":[...]}` 或直接 `[ {...} ]`'></textarea>
+    <div class="modal-row">
+      <button class="btn btn-primary btn-sm" id="btn-clip" type="button">从剪贴板读取</button>
+      <button class="btn btn-secondary btn-sm" id="btn-parse" type="button">解析并更新</button>
+      <button class="btn btn-ghost btn-sm" id="btn-restore" type="button">恢复内嵌快照</button>
+      <button class="btn btn-ghost btn-sm" id="btn-paste-close" type="button" style="margin-left:auto" aria-label="关闭"><svg><use href="#i-x"/></svg></button>
+      <span class="err hidden" id="paste-err"></span>
+    </div>
+  </div>
 </div>
+
 <div id="toast"></div>
 
 <script type="application/json" id="snapshot-json">/*__INLINE_DATA__*/</script>
-<script>/*__INLINE_JS__*/</script>
+<script>
+/*__INLINE_JS__*/
+</script>
 </body>
 </html>

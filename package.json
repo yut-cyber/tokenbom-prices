@@ -1,6 +1,6 @@
 {
   "name": "tokenbom-prices",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "type": "module",
   "description": "TokenBom 模型价格榜 · 月成本估算（单文件纯前端工具）",

@@ -4,194 +4,499 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="TokenBom 模型价格榜 · 月成本估算（单文件纯前端工具）">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%8A%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23c96442'/%3E%3Ctext x='50' y='68' font-size='58' text-anchor='middle' fill='%23fff' font-family='Georgia,serif'%3ET%3C/text%3E%3C/svg%3E">
 <title>TokenBom 模型价格榜 · 月成本估算</title>
+<script>
+(function(){var t=null;try{t=localStorage.getItem('tokenbom_theme')}catch(e){}
+if(t==='dark'||(!t&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')})();
+</script>
 <style>
-  :root{
-    --bg:#f4f5f9; --card:#ffffff; --line:#e4e6ef; --txt:#1c2030; --sub:#6b7280;
-    --accent:#4f46e5; --accent-soft:#eef0ff; --good:#0a8a4a; --bad:#c2392f;
-   
-  }
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--txt);
-    font:14px/1.5 -apple-system,"Segoe UI","Microsoft YaHei",system-ui,sans-serif;}
-  .wrap{max-width:1180px;margin:0 auto;padding:20px 16px 60px}
-  header{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between;margin-bottom:14px}
-  h1{font-size:22px;margin:0}
-  h1 a{color:inherit;text-decoration:none;border-bottom:1px dotted #b6bac9}
-  .status{color:var(--sub);font-size:12.5px;margin-top:3px}
-  .actions{display:flex;gap:8px;flex-wrap:wrap}
-  button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--card);
-    padding:7px 13px;border-radius:8px;transition:.15s}
-  button:hover{border-color:var(--accent);color:var(--accent)}
-  button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
-  button.primary:hover{opacity:.9;color:#fff}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:14px}
-  .params{display:flex;flex-wrap:wrap;gap:14px 22px;align-items:center}
-  .param{display:flex;align-items:center;gap:7px;white-space:nowrap}
-  .param label{color:var(--sub)}
-  input[type=number]{width:76px;font:inherit;padding:5px 7px;border:1px solid var(--line);border-radius:7px;text-align:right}
-  input[type=text]{font:inherit;padding:6px 10px;border:1px solid var(--line);border-radius:7px;width:200px}
-  select{font:inherit;padding:6px 9px;border:1px solid var(--line);border-radius:7px;cursor:pointer}
-  input[type=range]{width:150px;accent-color:var(--accent);vertical-align:middle}
-  .ratio-val{font-weight:600;min-width:38px;display:inline-block}
-  .stats{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);color:var(--sub);font-size:12.8px;display:flex;flex-wrap:wrap;gap:6px 18px}
-  .stats b{color:var(--txt)}
-  .filters{display:flex;flex-wrap:wrap;gap:14px;align-items:center}
-  .filters label{display:flex;gap:6px;align-items:center;color:var(--sub);cursor:pointer}
-  .table-wrap{padding:0;overflow:auto;max-height:max(420px, calc(100vh - 330px))}
-  table{width:100%;border-collapse:collapse;font-size:13.2px;min-width:900px}
-  thead th{position:sticky;top:0;background:#fafbfe;border-bottom:2px solid var(--line);
-    padding:10px 12px;text-align:right;white-space:nowrap;user-select:none;z-index:2}
-  thead th.l{text-align:left}
-  thead th.sortable{cursor:pointer}
-  thead th.sortable:hover{color:var(--accent)}
-  thead .arrow{font-size:10px;color:var(--accent)}
-  tbody td{padding:8px 12px;border-bottom:1px solid #eef0f5;text-align:right;white-space:nowrap}
-  tbody td.l{text-align:left}
-  tbody tr:hover{background:#f8f9fd}
-      .mname{font-weight:600}
-  .badge{display:inline-block;font-size:10.5px;line-height:1;padding:3px 6px;border-radius:20px;margin-left:5px;vertical-align:1px;white-space:nowrap}
-  .b-avail{background:#e2f5ea;color:var(--good)}
-  .b-supply{background:#fff2dd;color:#a06a00}
-  .b-verifying{background:#e8e8f5;color:#5b5b8a}
-  .b-sunset{background:#fde8e6;color:var(--bad)}
-    .chips{color:var(--sub);font-size:11.5px;white-space:normal;max-width:300px}
-  .chip{display:inline-block;border:1px solid var(--line);border-radius:5px;padding:1px 5px;margin:1px 2px;background:#fbfbfe}
-  .delta-neg{color:var(--good);font-weight:600}
-  .delta-pos{color:var(--bad);font-weight:600}
-  .delta-zero{color:var(--sub)}
-  .muted{color:var(--sub)}
-  .hidden{display:none!important}
-  #paste-panel{border-color:#f0d98c;background:#fffdf4}
-  #paste-panel h2{margin:0 0 8px;font-size:15px}
-  #paste-panel ol{margin:6px 0 10px;padding-left:20px;color:var(--sub)}
-  #paste-panel textarea{width:100%;height:110px;font:12px/1.4 Consolas,monospace;border:1px solid var(--line);
-    border-radius:8px;padding:8px;resize:vertical}
-  .paste-row{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
-  .err{color:var(--bad);font-size:12.5px;margin-top:6px}
-  #percall h2{margin:0 0 10px;font-size:15px}
-  .pc-model{font-weight:700;margin:10px 0 4px}
-  .pc-table{border-collapse:collapse;font-size:12.8px;margin-left:12px}
-  .pc-table td,.pc-table th{border:1px solid var(--line);padding:4px 10px;text-align:left}
-  footer{color:var(--sub);font-size:12.3px;line-height:1.7;margin-top:18px}
-  #toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);opacity:0;
-    background:#22263a;color:#fff;padding:9px 18px;border-radius:20px;font-size:13px;transition:.25s;pointer-events:none;z-index:9}
-  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-  .count{color:var(--sub);font-size:12.5px;margin:0 0 6px 4px}
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,18..72,300;0,18..72,400;0,18..72,500;1,18..72,400&family=Geist+Mono:wght@400;500&display=swap');
 
-/* ---- 交互打磨：过渡 / 聚焦 / 悬停 / 动效 ---- */
-button,input,select,thead th.sortable,tbody tr,.card,.chip,.badge{transition:background-color .16s ease,border-color .16s ease,box-shadow .16s ease,color .16s ease,transform .12s ease}
-button:active{transform:scale(.96)}
-button.primary:active{transform:scale(.97)}
-input[type=number]:hover,input[type=text]:hover,select:hover{border-color:#c9cde0}
-input[type=number]:focus,input[type=text]:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
-.card{box-shadow:0 1px 2px rgba(28,32,48,.04)}
-.card:hover{box-shadow:0 4px 16px rgba(28,32,48,.07)}
-.chip:hover{border-color:#c9cde0;background:#f4f5fb}
-.rule-note{margin:10px 0 0;color:var(--sub);font-size:12.3px;line-height:1.7;padding-left:10px;border-left:3px solid #d9dcff}
-.rule-note b{color:var(--txt)}
-.table-wrap::-webkit-scrollbar{width:10px;height:10px}
-.table-wrap::-webkit-scrollbar-track{background:transparent}
-.table-wrap::-webkit-scrollbar-thumb{background:#d4d8e6;border-radius:8px;border:2px solid #fff}
-.table-wrap::-webkit-scrollbar-thumb:hover{background:#b9bed2}
+/* ===== 1) Primitive scales (single source of truth, light) ===== */
+:root {
+  --brand-50:#fbf2ed; --brand-100:#f4e0d5; --brand-200:#ebc6b6; --brand-300:#e0a892; --brand-400:#d6866a;
+  --brand-500:#c96442; --brand-600:#b0562f; --brand-700:#934828; --brand-800:#753a22; --brand-900:#582e1d;
+  --text-50:#f6f5f0; --text-100:#ece9de; --text-200:#dad9d4; --text-300:#c2c0b6; --text-400:#9b988c;
+  --text-500:#6e6d68; --text-600:#535146; --text-700:#46443b; --text-800:#3d3929; --text-900:#28261b;
+  --bg-50:#ffffff; --bg-100:#faf9f5; --bg-200:#f5f4ef; --bg-300:#ede9de; --bg-400:#e3e0d4;
+  --bg-500:#dad9d4; --bg-600:#cdcabf; --bg-700:#b4b2a7; --bg-800:#8a887e; --bg-900:#535146;
+  --icon-50:#ffffff; --icon-100:#dad9d4; --icon-200:#c2c0b6; --icon-300:#9b988c; --icon-400:#6e6d68;
+  --icon-500:#535146; --icon-600:#46443b; --icon-700:#3d3929; --icon-800:#28261b; --icon-900:#141413;
+  --border-50:#f0efe9; --border-100:#ebebeb; --border-200:#e3e0d4; --border-300:#dad9d4; --border-400:#cdcabf;
+  --border-500:#b4b2a7; --border-600:#9b988c; --border-700:#6e6d68; --border-800:#535146; --border-900:#3d3929;
+  --success-50:#f0f3ea; --success-100:#e7ecdd; --success-200:#d3dcc1; --success-300:#b8c69e; --success-400:#9aac79;
+  --success-500:#788c5d; --success-600:#647649; --success-700:#4f5d3a; --success-800:#3d482d; --success-900:#2b331f;
+  --error-50:#fcecea; --error-100:#f7dedb; --error-200:#f3c4bf; --error-300:#eb9d96; --error-400:#e0716a;
+  --error-500:#d64545; --error-600:#b83636; --error-700:#962c2c; --error-800:#732222; --error-900:#531818;
+
+  /* ===== 2) Semantic tokens (light) ===== */
+  --background:var(--bg-100); --card:var(--bg-200); --popover:var(--bg-50); --muted:var(--bg-300);
+  --foreground:var(--text-800); --card-foreground:var(--icon-900); --popover-foreground:var(--text-900);
+  --primary-foreground:#ffffff; --secondary-foreground:var(--text-600); --muted-foreground:var(--text-500);
+  --accent-foreground:var(--text-900); --destructive-foreground:#ffffff;
+  --primary:var(--brand-500); --secondary:#e9e6dc; --accent:var(--secondary);
+  --input:var(--border-500); --ring:var(--brand-500); --border:var(--border-300);
+  --destructive:var(--error-500); --success:var(--success-500);
+  --sidebar:#f5f4ee; --sidebar-foreground:#3d3d3a; --sidebar-accent:#e9e6dc; --sidebar-border:var(--border-100);
+
+  /* ===== 3) Non-color tokens ===== */
+  --font-display:Newsreader,Georgia,ui-serif,serif;
+  --font-sans:Poppins,"Segoe UI","Microsoft YaHei",system-ui,sans-serif;
+  --font-serif:Lora,Georgia,"Microsoft YaHei",ui-serif,serif;
+  --font-mono:Geist Mono,ui-monospace,Consolas,monospace;
+  --radius-sm:8px; --radius-md:12px; --radius:1rem; --radius-xl:20px; --radius-2xl:24px; --radius-full:9999px;
+  --shadow-sm:0 1px 3px 0 rgba(0,0,0,.1),0 1px 2px -1px rgba(0,0,0,.1);
+  --shadow-md:0 1px 3px 0 rgba(0,0,0,.1),0 2px 4px -1px rgba(0,0,0,.1);
+}
+
+/* ===== Dark theme ===== */
+.dark {
+  --brand-50:#3a2a22; --brand-100:#4d3528; --brand-200:#6b4533; --brand-300:#8a5740; --brand-400:#b0683f;
+  --brand-500:#d97757; --brand-600:#e08d6f; --brand-700:#e8a98f; --brand-800:#f0c6b3; --brand-900:#f8e3d8;
+  --text-50:#1b1b19; --text-100:#2c2c2b; --text-200:#46443b; --text-300:#6e6d68; --text-400:#908e84;
+  --text-500:#b7b5a9; --text-600:#c3c0b6; --text-700:#d8d6cd; --text-800:#f1f1ef; --text-900:#faf9f5;
+  --bg-50:#1b1b19; --bg-100:#262624; --bg-200:#2c2c2b; --bg-300:#30302e; --bg-400:#3e3e38;
+  --bg-500:#4a4a43; --bg-600:#52514a; --bg-700:#6e6d68; --bg-800:#908e84; --bg-900:#b7b5a9;
+  --icon-50:#1b1b19; --icon-100:#2c2c2b; --icon-200:#46443b; --icon-300:#6e6d68; --icon-400:#908e84;
+  --icon-500:#b7b5a9; --icon-600:#d8d6cd; --icon-700:#f1f1ef; --icon-800:#f8f8f6; --icon-900:#ffffff;
+  --border-50:#1f1e1d; --border-100:#2c2c2b; --border-200:#343430; --border-300:#3e3e38; --border-400:#4a4a43;
+  --border-500:#52514a; --border-600:#6e6d68; --border-700:#908e84; --border-800:#b7b5a9; --border-900:#d8d6cd;
+  --success-50:#232a1c; --success-100:#2e3823; --success-200:#3f4d30; --success-300:#556640; --success-400:#708353;
+  --success-500:#8ca06f; --success-600:#a3b58a; --success-700:#bccaa8; --success-800:#d6dfc8; --success-900:#edf2e4;
+  --error-50:#3a1f1f; --error-100:#4d2424; --error-200:#6e2c2c; --error-300:#93302f; --error-400:#c43a39;
+  --error-500:#ef4444; --error-600:#f26b6b; --error-700:#f59292; --error-800:#f9b9b9; --error-900:#fcdede;
+
+  --background:var(--bg-100); --card:var(--bg-200); --popover:var(--bg-300); --muted:var(--bg-50);
+  --foreground:var(--text-800); --card-foreground:var(--text-900); --popover-foreground:#e5e5e2;
+  --primary-foreground:#141413; --secondary-foreground:var(--bg-300); --muted-foreground:var(--text-500);
+  --accent-foreground:#f5f4ee; --destructive-foreground:#ffffff;
+  --primary:var(--brand-500); --secondary:var(--text-900); --accent:#1a1915;
+  --input:var(--border-500); --ring:var(--brand-500); --border:var(--border-300);
+  --destructive:var(--error-500); --success:var(--success-500);
+  --sidebar:#1f1e1d; --sidebar-foreground:#c3c0b6; --sidebar-accent:#343434; --sidebar-border:var(--border-100);
+}
+
+/* ===== Base ===== */
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--background);color:var(--foreground);
+  font:13.5px/1.55 var(--font-sans);-webkit-font-smoothing:antialiased}
+button{font:inherit;cursor:pointer;border:none;background:none;color:inherit;transition:background-color .16s ease,border-color .16s ease,box-shadow .16s ease,color .16s ease,transform .12s ease,opacity .16s ease}
+button:active{transform:scale(.97)}
+input,select,textarea{font:inherit;color:var(--foreground)}
+a{color:inherit}
+.hidden{display:none!important}
+::selection{background:var(--brand-200)}
+
+/* ===== Layout ===== */
+.app{display:flex;min-height:100vh}
+.main-col{flex:1;min-width:0;display:flex;flex-direction:column}
+.content{padding:32px;display:flex;flex-direction:column;gap:24px;max-width:1180px;width:100%;min-width:0}
+
+/* ===== Sidebar ===== */
+.sidebar{width:248px;min-width:248px;height:100vh;position:sticky;top:0;display:flex;flex-direction:column;gap:24px;
+  padding:24px 16px;overflow-y:auto;background:var(--sidebar);border-right:1px solid var(--sidebar-border)}
+.brand{display:flex;align-items:center;gap:10px;padding:0 8px}
+.brand-logo{width:38px;height:38px;border-radius:var(--radius-md);background:var(--primary);color:var(--primary-foreground);
+  display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:22px;font-weight:500;flex:none}
+.brand-name{font-weight:600;font-size:14.5px;letter-spacing:-.01em}
+.brand-sub{font-size:11px;color:var(--muted-foreground);letter-spacing:.02em}
+.nav{display:flex;flex-direction:column;gap:18px}
+.nav-group{font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--muted-foreground);padding:0 8px}
+.nav-items{display:flex;flex-direction:column;gap:2px;margin-top:6px}
+.nav-item{display:flex;align-items:center;gap:10px;width:100%;min-width:0;padding:9px 12px;border-radius:var(--radius-md);
+  text-align:left;font-size:13px;font-weight:500;color:var(--sidebar-foreground)}
+.nav-item:hover{opacity:.8}
+.nav-item.active{background:var(--sidebar-accent);color:var(--foreground)}
+.nav-item.disabled{cursor:not-allowed;opacity:.55}
+.nav-item.disabled:hover{opacity:.55;transform:none}
+.nav-item svg{width:17px;height:17px;flex:none}
+.soon{margin-left:auto;font-size:10px;font-weight:600;padding:2px 6px;border-radius:var(--radius-full);
+  background:var(--muted);color:var(--muted-foreground);letter-spacing:.03em;white-space:nowrap}
+.side-card{border-radius:var(--radius);padding:16px;display:flex;flex-direction:column;gap:10px;background:var(--card);border:1px solid var(--border)}
+.side-card.primary{background:var(--primary);color:var(--primary-foreground);border:none;margin-top:auto}
+.side-card.primary .card-title{color:var(--primary-foreground)}
+.side-card.primary .muted{color:var(--primary-foreground);opacity:.85}
+.side-card.primary .rule-note{color:var(--primary-foreground);opacity:.8;border-left-color:rgba(255,255,255,.35)}
+.side-card.primary .rule-note b{color:var(--primary-foreground)}
+.side-card.primary input,.side-card.primary select{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.3);color:var(--primary-foreground)}
+.side-card.primary input:focus,.side-card.primary select:focus{border-color:#fff;box-shadow:0 0 0 3px rgba(255,255,255,.2)}
+.side-card.primary .field>span{color:var(--primary-foreground);opacity:.9}
+.side-card.primary .field em{color:var(--primary-foreground);opacity:.85}
+.card-title{font-size:13.5px;font-weight:600;margin:0}
+.muted{color:var(--muted-foreground)}
+
+/* ===== Fields ===== */
+.field{display:flex;flex-direction:column;gap:5px}
+.field>span{font-size:11.5px;font-weight:500;color:var(--muted-foreground)}
+.field input[type=number]{width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);
+  background:var(--popover);font-variant-numeric:tabular-nums;text-align:right}
+.field select{width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);
+  background:var(--popover);cursor:pointer}
+.field input:hover,.field select:hover{border-color:var(--input)}
+.field input:focus,.field select:focus{outline:none;border-color:var(--ring);box-shadow:0 0 0 3px color-mix(in srgb,var(--ring),transparent 80%)}
+.field-affix{display:flex;align-items:center;gap:6px}
+.field-affix input{flex:1}
+.field-affix em{font-style:normal;font-size:11.5px;color:var(--muted-foreground);white-space:nowrap}
+.rule-note{margin:0;font-size:11.8px;line-height:1.65;color:var(--muted-foreground);padding-left:10px;border-left:3px solid var(--brand-200)}
+.rule-note b{color:var(--foreground)}
+
+/* ===== Buttons ===== */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:40px;padding:8px 16px;
+  border-radius:var(--radius-md);font-size:13px;font-weight:600;border:1px solid transparent}
+.btn svg{width:15px;height:15px}
+.btn-primary{background:var(--primary);color:var(--primary-foreground)}
+.btn-primary:hover{opacity:.9}
+.btn-secondary{background:var(--secondary);color:var(--secondary-foreground)}
+.btn-secondary:hover{opacity:.85}
+.btn-outline{background:var(--popover);color:var(--foreground);border-color:var(--border)}
+.btn-outline:hover{border-color:var(--input)}
+.btn-ghost{background:transparent;color:var(--muted-foreground)}
+.btn-ghost:hover{background:var(--muted);color:var(--foreground)}
+.btn-sm{min-height:34px;padding:6px 12px;font-size:12.5px}
+.w-full{width:100%}
+.icon-btn{width:40px;height:40px;border-radius:var(--radius-md);border:1px solid var(--border);background:var(--card);
+  color:var(--foreground);display:inline-flex;align-items:center;justify-content:center;flex:none}
+.icon-btn:hover{border-color:var(--input)}
+.icon-btn svg{width:17px;height:17px}
+html:not(.dark) .icon-sun{display:none}
+html.dark .icon-moon{display:none}
+
+/* ===== Topbar ===== */
+.topbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;
+  padding:20px 32px;border-bottom:1px solid var(--border);background:var(--background);position:sticky;top:0;z-index:20}
+.searchbox{display:flex;align-items:center;gap:9px;flex:1;min-width:0;max-width:440px;padding:9px 14px;
+  border-radius:var(--radius-md);border:1px solid var(--border);background:var(--card);transition:border-color .16s ease,box-shadow .16s ease}
+.searchbox:focus-within{border-color:var(--ring);box-shadow:0 0 0 3px color-mix(in srgb,var(--ring),transparent 82%)}
+.searchbox svg{width:15px;height:15px;color:var(--muted-foreground);flex:none}
+.searchbox input{flex:1;border:none;background:transparent;outline:none;font-size:13px;min-width:0}
+.searchbox input::placeholder{color:var(--muted-foreground)}
+.kbd{font-size:10.5px;padding:2px 6px;border-radius:6px;background:var(--muted);color:var(--muted-foreground);border:1px solid var(--border)}
+.topbar-actions{display:flex;align-items:center;gap:10px}
+
+/* ===== Banner ===== */
+.banner{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.eyebrow{margin:0 0 8px;font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--primary)}
+.banner h1{margin:0;font-family:var(--font-display);font-weight:400;font-size:38px;line-height:1.08;letter-spacing:-.01em}
+.banner-sub{margin:12px 0 0;max-width:560px;font-family:var(--font-serif);font-size:15px;line-height:1.65;color:var(--muted-foreground)}
+
+/* ===== KPI cards ===== */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:16px;min-width:0}
+.kpi{display:flex;flex-direction:column;justify-content:space-between;gap:14px;padding:20px;border-radius:var(--radius);
+  border:1px solid var(--border);background:var(--popover);min-width:0;transition:box-shadow .2s ease,transform .2s ease,border-color .16s ease}
+.kpi:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
+.kpi-label{margin:0;font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--muted-foreground);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi-value{margin:0;font-size:30px;font-weight:600;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi-sub{margin:0;font-size:12px;color:var(--muted-foreground);line-height:1.5}
+.kpi-sub b{color:var(--success-600);font-weight:600}
+.dark .kpi-sub b{color:var(--success-700)}
+.kpi-sub .up{color:var(--error-600);font-weight:600}
+.dark .kpi-sub .up{color:var(--error-400)}
+
+/* ===== Toolbar / tabs ===== */
+.toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.tabs{display:inline-flex;align-items:center;flex-wrap:wrap;border-radius:var(--radius-md);padding:4px;gap:4px;background:var(--muted)}
+.tab{padding:8px 16px;border-radius:10px;font-size:13px;font-weight:500;color:var(--muted-foreground)}
+.tab:hover{color:var(--foreground)}
+.tab.active{background:var(--popover);color:var(--foreground);box-shadow:var(--shadow-sm)}
+.hide-sunset{display:inline-flex;align-items:center;gap:6px;margin-left:10px;font-size:12.5px;color:var(--muted-foreground);cursor:pointer;user-select:none}
+.hide-sunset input{accent-color:var(--primary);width:14px;height:14px;cursor:pointer}
+.count{font-size:12.5px;color:var(--muted-foreground);font-variant-numeric:tabular-nums}
+
+/* ===== Table ===== */
+.table-card{border-radius:var(--radius);border:1px solid var(--border);background:var(--popover);overflow:hidden;min-width:0}
+.table-card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border)}
+.table-card-head h2{margin:0;font-size:17px;font-weight:600;letter-spacing:-.01em}
+.table-scroll{overflow-x:auto;min-width:0;overscroll-behavior-x:contain}
+.table-scroll::-webkit-scrollbar{width:10px;height:10px}
+.table-scroll::-webkit-scrollbar-track{background:transparent}
+.table-scroll::-webkit-scrollbar-thumb{background:var(--border-400);border-radius:8px;border:2px solid transparent;background-clip:content-box}
+.table-scroll::-webkit-scrollbar-thumb:hover{background:var(--border-500);background-clip:content-box}
+table{width:100%;border-collapse:collapse;min-width:920px}
+thead th{position:sticky;top:0;z-index:2;background:var(--popover);text-align:right;white-space:nowrap;user-select:none;
+  font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-foreground);
+  padding:12px 14px;border-bottom:1px solid var(--border)}
+thead th.l{text-align:left}
+thead th.sortable{cursor:pointer}
+thead th.sortable:hover{color:var(--primary)}
+thead .arrow{font-size:9px;color:var(--primary)}
+tbody td{padding:11px 14px;border-bottom:1px solid var(--border-100);text-align:right;white-space:nowrap;
+  font-variant-numeric:tabular-nums;font-size:13px}
+tbody td.l{text-align:left}
+tbody tr{transition:background-color .13s ease}
+tbody tr:hover{background:var(--card)}
+tbody tr:last-child td{border-bottom:none}
+.mname{font-weight:600;font-size:13.5px}
+.mnote{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px;max-width:340px}
+.chip{display:inline-block;border:1px solid var(--border);border-radius:6px;padding:1px 6px;margin:0;
+  font-size:10.5px;color:var(--muted-foreground);background:var(--card);white-space:nowrap}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:var(--radius-full);font-size:11px;font-weight:500;white-space:nowrap}
+.badge-avail{background:var(--success-50);color:var(--success-700)}
+.dark .badge-avail{background:var(--success-100);color:var(--success-900)}
+.badge-supply{background:var(--brand-100);color:var(--brand-800)}
+.dark .badge-supply{color:var(--brand-50)}
+.badge-verifying{background:var(--muted);color:var(--muted-foreground)}
+.badge-sunset{background:var(--error-50);color:var(--error-700)}
+.dark .badge-sunset{color:var(--error-200)}
+.badge-muted{background:var(--muted);color:var(--muted-foreground)}
+.delta-neg{color:var(--success-600);font-weight:600}
+.dark .delta-neg{color:var(--success-500)}
+.delta-pos{color:var(--error-600);font-weight:600}
+.dark .delta-pos{color:var(--error-500)}
+.delta-zero{color:var(--muted-foreground)}
+
+/* ===== Per-call ===== */
+.pc-table{min-width:560px}
+.pc-table th{text-align:left}
+.pc-table td.l{text-align:left}
+
+/* ===== Paste modal ===== */
+.modal-overlay{position:fixed;inset:0;z-index:50;background:rgba(20,20,19,.45);backdrop-filter:blur(3px);
+  display:flex;align-items:center;justify-content:center;padding:24px;animation:fadeIn .2s ease}
+.modal-card{width:min(680px,100%);max-height:86vh;overflow:auto;border-radius:var(--radius-xl);border:1px solid var(--border);
+  background:var(--popover);color:var(--popover-foreground);padding:24px;box-shadow:var(--shadow-md);animation:fadeUp .25s ease}
+.modal-card h2{margin:0 0 4px;font-size:16px;display:flex;align-items:center;gap:8px}
+.modal-card h2 svg{width:17px;height:17px;color:var(--error-500)}
+.modal-card ol{margin:8px 0 14px;padding-left:20px;color:var(--muted-foreground);font-size:12.8px;line-height:1.8}
+.modal-card textarea{width:100%;height:120px;font:12px/1.5 var(--font-mono);border:1px solid var(--border);border-radius:var(--radius-sm);
+  padding:10px;resize:vertical;background:var(--background);color:var(--foreground)}
+.modal-card textarea:focus{outline:none;border-color:var(--ring);box-shadow:0 0 0 3px color-mix(in srgb,var(--ring),transparent 82%)}
+.modal-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center}
+.err{color:var(--error-600);font-size:12.5px}
+.dark .err{color:var(--error-500)}
+
+/* ===== Footer / toast / anim ===== */
+.page-foot{color:var(--muted-foreground);font-size:12.3px;line-height:1.8;margin:0}
+.page-foot b{color:var(--foreground)}
+#toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);opacity:0;
+  background:var(--icon-900);color:var(--bg-50);padding:10px 20px;border-radius:var(--radius-full);font-size:13px;
+  transition:opacity .25s ease,transform .25s ease;pointer-events:none;z-index:60;box-shadow:var(--shadow-md)}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@keyframes fadeIn{from{opacity:0}}
 @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-header,.wrap>.card{animation:fadeUp .45s ease both}
-.wrap>.card:nth-of-type(2){animation-delay:.06s}
-.wrap>.card:nth-of-type(3){animation-delay:.12s}
-.wrap>.card:nth-of-type(4){animation-delay:.18s}
+.banner,.kpis,.toolbar,.table-card,.page-foot{animation:fadeUp .4s ease both}
+.kpis{animation-delay:.05s}.toolbar{animation-delay:.1s}.table-card{animation-delay:.15s}.page-foot{animation-delay:.2s}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+/* ===== Responsive ===== */
+@media (max-width:1100px){.banner h1{font-size:32px}}
+@media (max-width:920px){
+  .sidebar{width:100%;min-width:0;height:auto;position:static;border-right:none;border-bottom:1px solid var(--sidebar-border);padding:16px}
+  .app{flex-direction:column}
+  .nav{flex-direction:row;flex-wrap:wrap;gap:8px}
+  .nav-items{flex-direction:row;flex-wrap:wrap;margin-top:4px}
+  .nav-item{width:auto;padding:7px 10px}
+  .side-card{margin-top:0}
+  .side-card.primary{order:-1}
+  .content{padding:20px 16px}
+  .topbar{padding:14px 16px}
+}
+
 </style>
 </head>
 <body>
-<div class="wrap">
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+  <defs>
+    <symbol id="i-tag" viewBox="0 0 24 24"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></symbol>
+    <symbol id="i-swap" viewBox="0 0 24 24"><path d="m8 3 4 4-4 4"/><path d="M4 7h16"/><path d="m16 21-4-4 4-4"/><path d="M20 17H4"/></symbol>
+    <symbol id="i-calc" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></symbol>
+    <symbol id="i-sliders" viewBox="0 0 24 24"><line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><line x1="14" x2="14" y1="2" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="16" x2="16" y1="18" y2="22"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect width="13" height="13" x="9" y="9" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+  </defs>
+</svg>
 
-<header>
-  <div>
-    <h1><a href="https://tokenbom.com/dashboard" target="_blank" rel="noopener">TokenBom</a> 模型价格榜 · 月成本估算</h1>
-    <div class="status" id="data-status">加载中…</div>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo">T</div>
+      <div>
+        <div class="brand-name">TokenBom</div>
+        <div class="brand-sub">pricing-dashboard v<span class="v">1.2.0</span></div>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <div>
+        <div class="nav-group">定价</div>
+        <div class="nav-items">
+          <button class="nav-item active" type="button"><svg><use href="#i-tag"/></svg>模型价格榜</button>
+          <button class="nav-item disabled" type="button" disabled><svg><use href="#i-chart"/></svg>价格趋势<span class="soon">即将上线</span></button>
+          <button class="nav-item disabled" type="button" disabled><svg><use href="#i-swap"/></svg>模型对比<span class="soon">即将上线</span></button>
+        </div>
+      </div>
+      <div>
+        <div class="nav-group">工具</div>
+        <div class="nav-items">
+          <button class="nav-item disabled" type="button" disabled><svg><use href="#i-calc"/></svg>成本计算器<span class="soon">即将上线</span></button>
+          <button class="nav-item disabled" type="button" disabled><svg><use href="#i-heart"/></svg>收藏列表<span class="soon">即将上线</span></button>
+        </div>
+      </div>
+      <div>
+        <div class="nav-group">设置</div>
+        <div class="nav-items">
+          <button class="nav-item disabled" type="button" disabled><svg><use href="#i-sliders"/></svg>偏好设置<span class="soon">即将上线</span></button>
+        </div>
+      </div>
+    </nav>
+
+    <div class="side-card" id="params-card">
+      <div class="card-title">估算参数</div>
+      <label class="field"><span>积分售价（¥/100积分）</span>
+        <select id="creditTier">
+          <option value="0.2">¥0.20 / 100积分</option>
+          <option value="0.18">¥0.18 / 100积分</option>
+          <option value="0.16">¥0.16 / 100积分</option>
+          <option value="0.14">¥0.14 / 100积分</option>
+        </select>
+      </label>
+      <label class="field"><span>我的模型月用量</span>
+        <span class="field-affix"><input type="number" id="monthlyTokens" step="10" min="0"><em>M tokens/月</em></span>
+      </label>
+      <label class="field"><span>现行月花费</span>
+        <span class="field-affix"><em>¥</em><input type="number" id="currentSpend" step="10" min="0"><em>/月</em></span>
+      </label>
+      <button class="btn btn-ghost btn-sm w-full" id="btn-reset" type="button">恢复默认</button>
+      <p class="rule-note">口径：月总用量按 <b>4:1</b> 拆分 → <b>月成本 = 输入M×输入价 + 输出M×输出价</b>（积分按档位折算，汇率固定 7.2）。</p>
+    </div>
+
+    <div class="side-card primary">
+      <div class="card-title">数据更新</div>
+      <p class="muted" id="data-status" style="margin:0;font-size:12.3px;line-height:1.6">加载中…</p>
+      <button class="btn btn-secondary btn-sm w-full" id="btn-refresh-side" type="button"><svg><use href="#i-refresh"/></svg>手动刷新</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost btn-sm" id="btn-paste" type="button" style="flex:1;border:1px solid rgba(255,255,255,.3);color:inherit">粘贴数据</button>
+        <button class="btn btn-ghost btn-sm" id="btn-snapshot" type="button" style="flex:1;border:1px solid rgba(255,255,255,.3);color:inherit">恢复快照</button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main-col">
+    <header class="topbar">
+      <div class="searchbox">
+        <svg><use href="#i-search"/></svg>
+        <input type="text" id="search" placeholder="搜索模型名称..." autocomplete="off">
+        <span class="kbd">Ctrl+K</span>
+      </div>
+      <div class="topbar-actions">
+        <button class="icon-btn" id="btn-theme" type="button" aria-label="切换深浅主题">
+          <svg class="icon-moon"><use href="#i-moon"/></svg>
+          <svg class="icon-sun"><use href="#i-sun"/></svg>
+        </button>
+        <button class="btn btn-outline" id="btn-md" type="button"><svg><use href="#i-copy"/></svg>复制 Markdown</button>
+        <button class="btn btn-primary" id="btn-csv" type="button"><svg><use href="#i-download"/></svg>导出 CSV</button>
+      </div>
+    </header>
+
+    <main class="content">
+      <section class="banner">
+        <div style="min-width:0">
+          <p class="eyebrow">定价仪表盘</p>
+          <h1>AI 模型价格榜</h1>
+          <p class="banner-sub" id="banner-sub">覆盖 120+ 主流 AI 模型的实时定价对比，按预估月度成本排序。数据基于 133.3M tokens/月，输入输出 4:1 配比。</p>
+        </div>
+        <button class="btn btn-primary" id="btn-refresh" type="button"><svg><use href="#i-refresh"/></svg>刷新价格</button>
+      </section>
+
+      <section class="kpis">
+        <div class="kpi">
+          <p class="kpi-label">月度用量</p>
+          <p class="kpi-value" id="kpi-usage">—</p>
+          <p class="kpi-sub" id="kpi-usage-sub">tokens / 月</p>
+        </div>
+        <div class="kpi">
+          <p class="kpi-label">当前月度成本</p>
+          <p class="kpi-value" id="kpi-spend">—</p>
+          <p class="kpi-sub">现行月花费 · 手填基准</p>
+        </div>
+        <div class="kpi">
+          <p class="kpi-label">最低成本模型</p>
+          <p class="kpi-value" id="kpi-min">—</p>
+          <p class="kpi-sub" id="kpi-min-sub">—</p>
+        </div>
+        <div class="kpi">
+          <p class="kpi-label">最高成本模型</p>
+          <p class="kpi-value" id="kpi-max">—</p>
+          <p class="kpi-sub" id="kpi-max-sub">—</p>
+        </div>
+      </section>
+
+      <section class="toolbar">
+        <div class="tabs" role="tablist" aria-label="状态筛选" id="avail-tabs">
+          <button class="tab active" role="tab" data-avail="all" aria-selected="true" type="button">全部状态</button>
+          <button class="tab" role="tab" data-avail="available" aria-selected="false" type="button">仅可用</button>
+          <button class="tab" role="tab" data-avail="needs_supply" aria-selected="false" type="button">仅缺供应</button>
+          <button class="tab" role="tab" data-avail="verifying" aria-selected="false" type="button">仅验证中</button>
+          <label class="hide-sunset"><input type="checkbox" id="hidesunset">隐藏将下线模型</label>
+        </div>
+        <span class="count" id="count"></span>
+      </section>
+
+      <section class="table-card">
+        <div class="table-scroll">
+          <table id="tbl">
+            <thead><tr>
+              <th class="l">#</th>
+              <th class="l sortable" data-key="model">模型名称 <span class="arrow"></span></th>
+              <th class="sortable" data-key="in">输入 ¥/M <span class="arrow"></span></th>
+              <th class="sortable" data-key="out">输出 ¥/M <span class="arrow"></span></th>
+              <th class="sortable" data-key="blended">混合 ¥/M <span class="arrow"></span></th>
+              <th class="sortable" data-key="monthly">月成本 (¥) <span class="arrow"></span></th>
+              <th title="相对你填写的现行月花费的增减">vs 当前</th>
+              <th>上下文</th>
+              <th>状态</th>
+            </tr></thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="table-card hidden" id="percall">
+        <div class="table-card-head">
+          <h2>按次计费模型</h2>
+          <span class="badge badge-muted">按次计费</span>
+        </div>
+        <div class="table-scroll" id="percall-body"></div>
+      </section>
+
+      <footer class="page-foot" id="assumptions"></footer>
+    </main>
   </div>
-  <div class="actions">
-    <button class="primary" id="btn-refresh">🔄 拉取最新价格</button>
-    <button id="btn-csv">⬇ 下载 CSV</button>
-    <button id="btn-md">⧉ 复制 Markdown</button>
-  </div>
-</header>
-
-<section class="card">
-  <div class="params">
-    <span class="param"><label>积分售价</label>
-      <select id="creditTier">
-        <option value="0.2">¥0.20 / 100积分</option>
-        <option value="0.18">¥0.18 / 100积分</option>
-        <option value="0.16">¥0.16 / 100积分</option>
-        <option value="0.14">¥0.14 / 100积分</option>
-      </select>
-    </span>
-    <span class="param"><label>我的模型月用量</label><input type="number" id="monthlyTokens" step="10" min="0"> M tokens/月</span>
-    <span class="param"><label>现行月花费</label>¥<input type="number" id="currentSpend" step="10" min="0"> /月</span>
-    <span class="param"><button id="btn-reset">恢复默认</button></span>
-  </div>
-  <p class="rule-note">口径：月总用量按 <b>4:1</b> 拆分为输入/输出 → <b>月成本 = 输入M×输入价 + 输出M×输出价</b>（积分按所选档位折算为人民币，汇率固定 7.2）；「对比」列 = 相对你填写的现行月花费的增减。</p>
-  <div class="stats" id="stats"></div>
-</section>
-
-<section class="card filters">
-  <input type="text" id="search" placeholder="🔍 搜索模型名…">
-  <select id="avail">
-    <option value="all">全部状态</option>
-    <option value="available">仅可用</option>
-    <option value="needs_supply">仅缺供应</option>
-    <option value="verifying">仅验证中</option>
-  </select>
-  <label><input type="checkbox" id="hidesunset">隐藏将下线模型</label>
-  <span class="count" id="count"></span>
-</section>
-
-<section class="card hidden" id="paste-panel">
-  <h2>⚠️ 浏览器拦截了跨域请求（CORS），改用手动更新（约 10 秒）</h2>
-  <ol>
-    <li><a href="#" id="open-api" target="_blank" rel="noopener">点这里在新标签页打开 API 数据页</a></li>
-    <li>在那一页 <b>Ctrl+A 全选 → Ctrl+C 复制</b></li>
-    <li>回到本页，点「从剪贴板读取」，或直接在下面 Ctrl+V 后点「解析」</li>
-  </ol>
-  <textarea id="paste-box" placeholder='粘贴 JSON，形如 {"models":[...]}` 或直接 `[ {...} ]`'></textarea>
-  <div class="paste-row">
-    <button class="primary" id="btn-clip">📋 从剪贴板读取</button>
-    <button id="btn-parse">解析并更新</button>
-    <button id="btn-restore">恢复内嵌快照</button>
-    <span class="err hidden" id="paste-err"></span>
-  </div>
-</section>
-
-<div class="card table-wrap">
-  <table id="tbl">
-    <thead><tr>
-      <th class="l">#</th>
-      <th class="l sortable" data-key="model">模型 <span class="arrow"></span></th>
-      <th class="sortable" data-key="in">输入 ¥/M <span class="arrow"></span></th>
-      <th class="sortable" data-key="out">输出 ¥/M <span class="arrow"></span></th>
-      <th class="sortable" data-key="blended">混合 ¥/M <span class="arrow"></span></th>
-      <th class="sortable" data-key="monthly">预计月成本(¥) <span class="arrow"></span></th>
-      <th title="相对你填写的现行月花费的增减">对比现行花费</th>
-      <th class="l">上下文 / 能力</th>
-    </tr></thead>
-    <tbody id="tbody"></tbody>
-  </table>
 </div>
 
-<section class="card hidden" id="percall">
-  <h2>按次计费模型（不参与按 token 的月成本估算）</h2>
-  <div id="percall-body"></div>
-</section>
-
-<footer id="assumptions"></footer>
-
+<div id="paste-panel" class="modal-overlay hidden">
+  <div class="modal-card">
+    <h2><svg><use href="#i-alert"/></svg>浏览器拦截了跨域请求（CORS）</h2>
+    <ol>
+      <li><a href="#" id="open-api" target="_blank" rel="noopener">点这里在新标签页打开 API 数据页</a></li>
+      <li>在那一页 <b>Ctrl+A 全选 → Ctrl+C 复制</b></li>
+      <li>回到本页点「从剪贴板读取」，或直接在下面 Ctrl+V 后点「解析并更新」</li>
+    </ol>
+    <textarea id="paste-box" placeholder='粘贴 JSON，形如 {"models":[...]}` 或直接 `[ {...} ]`'></textarea>
+    <div class="modal-row">
+      <button class="btn btn-primary btn-sm" id="btn-clip" type="button">从剪贴板读取</button>
+      <button class="btn btn-secondary btn-sm" id="btn-parse" type="button">解析并更新</button>
+      <button class="btn btn-ghost btn-sm" id="btn-restore" type="button">恢复内嵌快照</button>
+      <button class="btn btn-ghost btn-sm" id="btn-paste-close" type="button" style="margin-left:auto" aria-label="关闭"><svg><use href="#i-x"/></svg></button>
+      <span class="err hidden" id="paste-err"></span>
+    </div>
+  </div>
 </div>
+
 <div id="toast"></div>
 
 <script type="application/json" id="snapshot-json">{"fetchedAt":"2026-08-29T17:14:58.715509+00:00","models":[{"model":"claude-4.6-sonnet","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":300,"outputPriceCredits":1500,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":false,"audioOutput":false,"pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"source":"registry"},"supplyDepth":"multi"},{"model":"claude-4.8-opus","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":500,"outputPriceCredits":2500,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":false,"audioOutput":false,"pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"source":"registry"},"supplyDepth":"multi"},{"model":"claude-fable-5","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":1000,"outputPriceCredits":5000,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":false,"audioOutput":false,"pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":1000000,"maxOutputTokens":128000,"source":"registry"},"supplyDepth":"multi","outputTpsP50":101},{"model":"claude-opus-5","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":500,"outputPriceCredits":2500,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":false,"audioOutput":false,"pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":1000000,"maxOutputTokens":128000,"source":"registry"},"supplyDepth":"multi","outputTpsP50":117},{"model":"claude-sonnet-5","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":200,"outputPriceCredits":1000,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":false,"audioOutput":false,"pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":1000000,"maxOutputTokens":128000,"source":"registry"},"supplyDepth":"multi"},{"model":"gpt-4o","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":250,"outputPriceCredits":1000,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":128000,"maxOutputTokens":16384,"source":"litellm"},"supplyDepth":"multi"},{"model":"gpt-5.2","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":175,"outputPriceCredits":1400,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":272000,"maxOutputTokens":128000,"source":"registry"},"supplyDepth":"multi"},{"model":"gpt-5.4","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":250,"outputPriceCredits":1500,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":false,"audioOutput":false,"pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":1050000,"maxOutputTokens":128000,"source":"registry"},"supplyDepth":"multi","outputTpsP50":218},{"model":"gpt-5.4-mini","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":75,"outputPriceCredits":450,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":false,"audioInput":false,"audioOutput":false,"pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":272000,"maxOutputTokens":128000,"source":"registry"},"supplyDepth":"multi"},{"model":"gpt-5.4-pro","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":3000,"outputPriceCredits":18000,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"unknown","vision":true,"toolCall":true,"reasoning":true,"thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":true,"responseJsonObject":false,"responseSchema":false,"promptCaching":true,"systemMessages":true,"maxInputTokens":1050000,"maxOutputTokens":128000,"source":"litellm"},"supplyDepth":"multi"},{"model":"gpt-5.5","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":500,"outputPriceCredits":3000,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":false,"audioOutput":false,"pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":1050000,"maxOutputTokens":128000,"source":"registry"},"supplyDepth":"multi"},{"model":"gpt-5.6-luna","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":20,"outputPriceCredits":120,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":922000,"maxOutputTokens":128000,"source":"registry"},"supplyDepth":"multi","outputTpsP50":97},{"model":"gpt-5.6-sol","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":400,"outputPriceCredits":2000,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":922000,"maxOutputTokens":128000,"source":"registry"},"supplyDepth":"multi","outputTpsP50":135},{"model":"gpt-5.6-terra","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":200,"outputPriceCredits":1200,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":922000,"maxOutputTokens":128000,"source":"registry"},"supplyDepth":"multi"},{"model":"gpt-image-2","availability":"available","pricing":{"pricingType":"per_call","inputPriceCredits":0,"outputPriceCredits":0,"perCallPriceCredits":5.3,"perCallPricingTable":{"low:1024x1024":0.6,"low:1024x1536":0.5,"low:1536x1024":0.5,"high:1024x1024":21.1,"high:1024x1536":16.5,"high:1536x1024":16.5,"medium:1024x1024":5.3,"medium:1024x1536":4.1,"medium:1536x1024":4.1},"imageTokenPricing":{"textInputCredits":500,"imageInputCredits":800,"imageOutputCredits":3000},"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"image_generation","vision":false,"toolCall":false,"reasoning":false,"thinking":false,"audioInput":false,"audioOutput":false,"pdfInput":false,"responseJsonObject":false,"responseSchema":false,"promptCaching":"unknown","systemMessages":"unknown","source":"registry"},"supplyDepth":"multi"},{"model":"gemini-2.5-flash","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":30,"outputPriceCredits":250,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":true,"audioOutput":false,"pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":1048576,"maxOutputTokens":65536,"source":"registry"},"supplyDepth":"multi"},{"model":"gemini-2.5-flash-lite","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":10,"outputPriceCredits":40,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":true,"audioOutput":false,"pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":1048576,"maxOutputTokens":65536,"source":"registry"},"supplyDepth":"multi"},{"model":"gemini-2.5-pro","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":125,"outputPriceCredits":1000,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":"unknown","audioInput":true,"audioOutput":"unknown","pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":1048576,"maxOutputTokens":65535,"source":"litellm"},"supplyDepth":"multi"},{"model":"gemini-3.1-flash-lite","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":25,"outputPriceCredits":150,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":"unknown","audioInput":true,"audioOutput":false,"pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":1048576,"maxOutputTokens":65536,"source":"litellm"},"supplyDepth":"multi"},{"model":"gemini-3.5-flash","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":150,"outputPriceCredits":900,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":"unknown","audioInput":true,"audioOutput":false,"pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":1048576,"maxOutputTokens":65535,"source":"litellm"},"supplyDepth":"multi"},{"model":"gemini-3.5-flash-lite","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":30,"outputPriceCredits":250,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":true,"audioOutput":false,"pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":1048576,"maxOutputTokens":65536,"source":"registry"},"supplyDepth":"multi"},{"model":"gemini-3.7-flash","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":75,"outputPriceCredits":375,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":true,"audioOutput":false,"pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":1048576,"maxOutputTokens":65536,"source":"registry"},"supplyDepth":"multi"},{"model":"kimi-k2.5","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":60,"outputPriceCredits":250,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"registry"},"supplyDepth":"multi","sunset":{"sunsetAt":"2026-08-31","replacedBy":"kimi-k2.6"}},{"model":"kimi-k2.6","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":95,"outputPriceCredits":400,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"registry"},"supplyDepth":"multi"},{"model":"kimi-k2.7-code","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":95,"outputPriceCredits":400,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"unknown","vision":"unknown","toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"none"},"supplyDepth":"multi"},{"model":"kimi-k3","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":180,"outputPriceCredits":600,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"unknown","vision":"unknown","toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"none"},"supplyDepth":"multi"},{"model":"deepseek-v4-flash","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":34,"outputPriceCredits":77,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":false,"toolCall":true,"reasoning":true,"thinking":false,"audioInput":false,"audioOutput":false,"pdfInput":false,"responseJsonObject":true,"responseSchema":false,"promptCaching":true,"systemMessages":true,"maxInputTokens":1000000,"maxOutputTokens":393216,"source":"registry"},"supplyDepth":"multi","outputTpsP50":100},{"model":"deepseek-v4-flash-0731","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":34,"outputPriceCredits":77,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":"unknown","toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"registry"},"supplyDepth":"multi","outputTpsP50":119},{"model":"deepseek-v4-flash-vision-exp","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":34,"outputPriceCredits":77,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":false,"audioInput":false,"audioOutput":false,"pdfInput":false,"responseJsonObject":true,"responseSchema":false,"promptCaching":true,"systemMessages":true,"maxInputTokens":1000000,"maxOutputTokens":393216,"source":"registry"},"supplyDepth":"multi","outputTpsP50":123},{"model":"deepseek-v4-pro","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":95,"outputPriceCredits":263,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":false,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":false,"audioOutput":false,"pdfInput":false,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":1000000,"maxOutputTokens":393216,"source":"registry"},"supplyDepth":"multi","outputTpsP50":142},{"model":"deepseek-v4-pro-0813","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":95,"outputPriceCredits":263,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":false,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":false,"audioOutput":false,"pdfInput":false,"responseJsonObject":true,"responseSchema":true,"promptCaching":"unknown","systemMessages":true,"source":"registry"},"supplyDepth":"multi","outputTpsP50":75},{"model":"grok-4.5","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":200,"outputPriceCredits":600,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":"unknown","toolCall":"unknown","reasoning":true,"thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"registry"},"supplyDepth":"multi"},{"model":"grok-4.6","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":200,"outputPriceCredits":600,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"registry"},"supplyDepth":"multi","outputTpsP50":271},{"model":"qwen-vl-max","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":80,"outputPriceCredits":320,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"registry"},"supplyDepth":"multi"},{"model":"glm-4.5","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":60,"outputPriceCredits":220,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":false,"toolCall":true,"reasoning":true,"thinking":false,"audioInput":false,"audioOutput":false,"pdfInput":false,"responseJsonObject":true,"responseSchema":true,"promptCaching":"unknown","systemMessages":true,"source":"registry"},"supplyDepth":"multi"},{"model":"glm-4.5-air","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":20,"outputPriceCredits":110,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":false,"toolCall":true,"reasoning":true,"thinking":false,"audioInput":false,"audioOutput":false,"pdfInput":false,"responseJsonObject":true,"responseSchema":true,"promptCaching":"unknown","systemMessages":true,"source":"registry"},"supplyDepth":"multi"},{"model":"glm-4.6","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":60,"outputPriceCredits":220,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":false,"toolCall":true,"reasoning":true,"thinking":false,"audioInput":false,"audioOutput":false,"pdfInput":false,"responseJsonObject":true,"responseSchema":true,"promptCaching":"unknown","systemMessages":true,"source":"registry"},"supplyDepth":"multi"},{"model":"glm-4.7","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":60,"outputPriceCredits":220,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":false,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":false,"audioOutput":false,"pdfInput":false,"responseJsonObject":true,"responseSchema":true,"promptCaching":"unknown","systemMessages":true,"source":"registry"},"supplyDepth":"multi"},{"model":"glm-5","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":100,"outputPriceCredits":320,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":false,"toolCall":true,"reasoning":true,"thinking":false,"audioInput":false,"audioOutput":false,"pdfInput":false,"responseJsonObject":true,"responseSchema":true,"promptCaching":"unknown","systemMessages":true,"source":"registry"},"supplyDepth":"multi","outputTpsP50":54},{"model":"glm-5-turbo","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":120,"outputPriceCredits":400,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":false,"toolCall":true,"reasoning":true,"thinking":false,"audioInput":false,"audioOutput":false,"pdfInput":false,"responseJsonObject":true,"responseSchema":true,"promptCaching":"unknown","systemMessages":true,"source":"registry"},"supplyDepth":"multi"},{"model":"glm-5.1","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":140,"outputPriceCredits":440,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":false,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":false,"audioOutput":false,"pdfInput":false,"responseJsonObject":true,"responseSchema":true,"promptCaching":"unknown","systemMessages":true,"source":"registry"},"supplyDepth":"multi"},{"model":"glm-5.2","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":140,"outputPriceCredits":440,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":"unknown","toolCall":"unknown","reasoning":true,"thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"registry"},"supplyDepth":"multi","outputTpsP50":84},{"model":"glm-5.3","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":140,"outputPriceCredits":440,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":false,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":false,"audioOutput":false,"pdfInput":true,"responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"registry"},"supplyDepth":"multi","outputTpsP50":91},{"model":"glm-5.3-flash","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":15,"outputPriceCredits":50,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":false,"audioOutput":false,"pdfInput":"unknown","responseJsonObject":true,"responseSchema":true,"promptCaching":"unknown","systemMessages":true,"maxInputTokens":1048576,"maxOutputTokens":131072,"source":"registry"},"supplyDepth":"multi","outputTpsP50":133},{"model":"codestral-2508","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":30,"outputPriceCredits":90,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":"unknown","toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":false,"audioOutput":false,"pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":true,"systemMessages":true,"maxInputTokens":131072,"source":"registry"},"supplyDepth":"multi"},{"model":"mistral-large-2512","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":50,"outputPriceCredits":150,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":"unknown","toolCall":true,"reasoning":"unknown","thinking":"unknown","audioInput":false,"audioOutput":false,"pdfInput":"unknown","responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":262144,"source":"registry"},"supplyDepth":"multi"},{"model":"mistral-medium-latest","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":150,"outputPriceCredits":750,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":false,"toolCall":true,"reasoning":"unknown","thinking":"unknown","audioInput":false,"audioOutput":false,"pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"source":"registry"},"supplyDepth":"multi"},{"model":"mistral-small-latest","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":15,"outputPriceCredits":60,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":false,"thinking":false,"audioInput":false,"audioOutput":false,"pdfInput":"unknown","responseJsonObject":true,"responseSchema":"unknown","promptCaching":false,"systemMessages":true,"source":"registry"},"supplyDepth":"multi"},{"model":"agnes-2.0-flash","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":0,"outputPriceCredits":0,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":"unknown","toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"registry"},"supplyDepth":"multi"},{"model":"agnes-2.5-flash","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":0,"outputPriceCredits":0,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":"unknown","toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","maxInputTokens":512000,"source":"registry"},"supplyDepth":"multi"},{"model":"agnes-2.5-pro","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":45,"outputPriceCredits":90,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":"unknown","toolCall":true,"reasoning":true,"thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","maxInputTokens":1000000,"maxOutputTokens":65536,"source":"registry"},"supplyDepth":"multi"},{"model":"agnes-2.5-pro-alpha","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":45,"outputPriceCredits":90,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"registry"},"supplyDepth":"multi"},{"model":"agnes-2.5-pro-beta","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":45,"outputPriceCredits":90,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":"unknown","toolCall":true,"reasoning":true,"thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","maxInputTokens":1000000,"maxOutputTokens":65536,"source":"registry"},"supplyDepth":"multi"},{"model":"hy3","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":14,"outputPriceCredits":56,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":false,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"source":"registry"},"supplyDepth":"multi"},{"model":"kat-coder-pro-v2.5","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":74,"outputPriceCredits":296,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":"unknown","toolCall":true,"reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","maxInputTokens":262144,"maxOutputTokens":80000,"source":"registry"},"supplyDepth":"multi"},{"model":"laguna-s-2.1","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":9,"outputPriceCredits":18,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":"unknown","toolCall":true,"reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"registry"},"supplyDepth":"multi"},{"model":"longcat-2.0","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":30,"outputPriceCredits":120,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":false,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":false,"audioOutput":false,"pdfInput":false,"responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":true,"systemMessages":true,"maxInputTokens":1048576,"maxOutputTokens":131072,"source":"registry"},"supplyDepth":"multi"},{"model":"mimo-v2.5","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":14,"outputPriceCredits":28,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":false,"audioOutput":false,"pdfInput":false,"responseJsonObject":true,"responseSchema":true,"promptCaching":"unknown","systemMessages":true,"source":"registry"},"supplyDepth":"multi"},{"model":"mimo-v2.5-pro","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":42,"outputPriceCredits":84,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":false,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":false,"audioOutput":false,"pdfInput":false,"responseJsonObject":true,"responseSchema":true,"promptCaching":"unknown","systemMessages":true,"source":"registry"},"supplyDepth":"multi"},{"model":"minimax-m2","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":30,"outputPriceCredits":120,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"registry"},"supplyDepth":"multi"},{"model":"minimax-m2.1","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":30,"outputPriceCredits":120,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":"unknown","toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"registry"},"supplyDepth":"multi"},{"model":"minimax-m2.1-highspeed","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":60,"outputPriceCredits":240,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":"unknown","toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"registry"},"supplyDepth":"multi"},{"model":"minimax-m2.5","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":30,"outputPriceCredits":120,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":"unknown","toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"registry"},"supplyDepth":"multi"},{"model":"minimax-m2.5-highspeed","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":60,"outputPriceCredits":240,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":"unknown","toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"registry"},"supplyDepth":"multi"},{"model":"minimax-m2.7","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":30,"outputPriceCredits":120,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":"unknown","toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"registry"},"supplyDepth":"multi"},{"model":"minimax-m2.7-highspeed","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":60,"outputPriceCredits":240,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":"unknown","toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"registry"},"supplyDepth":"multi"},{"model":"minimax-m3","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":40,"outputPriceCredits":130,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":"unknown","thinking":true,"audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"registry"},"supplyDepth":"multi"},{"model":"ministral-14b-2512","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":20,"outputPriceCredits":20,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":"unknown","toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":false,"audioOutput":false,"pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":true,"systemMessages":true,"maxInputTokens":262144,"source":"registry"},"supplyDepth":"multi"},{"model":"ministral-3b-2512","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":10,"outputPriceCredits":10,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":"unknown","toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":false,"audioOutput":false,"pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":true,"systemMessages":true,"maxInputTokens":262144,"source":"registry"},"supplyDepth":"multi"},{"model":"ministral-8b-2512","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":15,"outputPriceCredits":15,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":"unknown","toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":false,"audioOutput":false,"pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":true,"systemMessages":true,"maxInputTokens":262144,"source":"registry"},"supplyDepth":"multi"},{"model":"muse-spark-1-2","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":24,"outputPriceCredits":54,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"unknown","vision":"unknown","toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"none"},"supplyDepth":"multi"},{"model":"nemotron-3-ultra","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":50,"outputPriceCredits":220,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":"unknown","toolCall":"unknown","reasoning":true,"thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"registry"},"supplyDepth":"multi"},{"model":"qwen3-coder","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":65,"outputPriceCredits":325,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"unknown","vision":"unknown","toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"none"},"supplyDepth":"multi"},{"model":"qwen3-max","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":78,"outputPriceCredits":390,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"unknown","vision":"unknown","toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"none"},"supplyDepth":"multi"},{"model":"qwen3.5-flash","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":3,"outputPriceCredits":28,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"source":"registry"},"supplyDepth":"multi"},{"model":"qwen3.5-plus","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":40,"outputPriceCredits":240,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"unknown","vision":"unknown","toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"none"},"supplyDepth":"multi"},{"model":"qwen3.6-flash","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":17,"outputPriceCredits":100,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"source":"registry"},"supplyDepth":"multi"},{"model":"qwen3.6-plus","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":50,"outputPriceCredits":300,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"registry"},"supplyDepth":"multi"},{"model":"qwen3.7-flash","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":3,"outputPriceCredits":13,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":true,"responseSchema":"unknown","promptCaching":"unknown","systemMessages":true,"maxInputTokens":1000000,"maxOutputTokens":65536,"source":"registry"},"supplyDepth":"multi"},{"model":"qwen3.7-max","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":100,"outputPriceCredits":300,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"unknown","vision":"unknown","toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"none"},"supplyDepth":"multi"},{"model":"qwen3.7-plus","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":40,"outputPriceCredits":160,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"unknown","vision":"unknown","toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"none"},"supplyDepth":"multi"},{"model":"qwen3.8-27b","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":42,"outputPriceCredits":167,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"source":"registry"},"supplyDepth":"multi"},{"model":"qwen3.8-max","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":167,"outputPriceCredits":500,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":"unknown","toolCall":true,"reasoning":true,"thinking":true,"audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"source":"registry"},"supplyDepth":"multi","outputTpsP50":102},{"model":"sensenova-6.7-flash-lite","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":10,"outputPriceCredits":40,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":true,"maxInputTokens":262144,"source":"registry"},"supplyDepth":"multi"},{"model":"sensenova-6.8-flash-lite","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":10,"outputPriceCredits":40,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":true,"source":"registry"},"supplyDepth":"multi"},{"model":"step-3.7-flash","availability":"available","pricing":{"pricingType":"token","inputPriceCredits":20,"outputPriceCredits":115,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":true,"audioOutput":true,"pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"source":"registry"},"supplyDepth":"multi"},{"model":"claude-4.5-haiku","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":100,"outputPriceCredits":500,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":false,"audioOutput":false,"pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"source":"registry"}},{"model":"claude-4.6-opus","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":500,"outputPriceCredits":2500,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":false,"audioOutput":false,"pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"source":"registry"}},{"model":"claude-4.6-opus-thinking","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":400,"outputPriceCredits":2000,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"unknown","vision":true,"toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"inferred"}},{"model":"claude-4.7-opus","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":500,"outputPriceCredits":2500,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":false,"audioOutput":false,"pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"source":"registry"}},{"model":"claude-opus-4-5","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":500,"outputPriceCredits":2500,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":"unknown","audioOutput":"unknown","pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":200000,"maxOutputTokens":64000,"source":"registry"}},{"model":"claude-sonnet-4-20250514","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":300,"outputPriceCredits":1500,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":false,"audioOutput":false,"pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":1000000,"maxOutputTokens":64000,"source":"registry"},"sunset":{"sunsetAt":"2026-06-15","replacedBy":"claude-sonnet-5"}},{"model":"claude-sonnet-4-5","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":300,"outputPriceCredits":1500,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":false,"audioOutput":false,"pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":200000,"maxOutputTokens":64000,"source":"registry"}},{"model":"gpt-4.1","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":200,"outputPriceCredits":800,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":1047576,"maxOutputTokens":32768,"source":"litellm"}},{"model":"gpt-4.1-mini","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":40,"outputPriceCredits":160,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":1047576,"maxOutputTokens":32768,"source":"litellm"}},{"model":"gpt-4.1-nano","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":10,"outputPriceCredits":40,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":1047576,"maxOutputTokens":32768,"source":"litellm"}},{"model":"gpt-4o-mini","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":15,"outputPriceCredits":60,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":128000,"maxOutputTokens":16384,"source":"litellm"}},{"model":"gpt-5-mini","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":25,"outputPriceCredits":200,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":272000,"maxOutputTokens":128000,"source":"litellm"}},{"model":"gpt-5-nano","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":5,"outputPriceCredits":40,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":272000,"maxOutputTokens":128000,"source":"litellm"}},{"model":"gpt-5-pro","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":1500,"outputPriceCredits":12000,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"unknown","vision":true,"toolCall":true,"reasoning":true,"thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":400000,"maxOutputTokens":272000,"source":"litellm"}},{"model":"gpt-5.3-codex","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":175,"outputPriceCredits":1400,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":false,"toolCall":true,"reasoning":false,"thinking":false,"audioInput":false,"audioOutput":false,"pdfInput":false,"responseJsonObject":false,"responseSchema":false,"promptCaching":true,"systemMessages":false,"maxInputTokens":272000,"maxOutputTokens":128000,"source":"registry"}},{"model":"gpt-5.4-nano","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":20,"outputPriceCredits":125,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":272000,"maxOutputTokens":128000,"source":"litellm"}},{"model":"gemini-3-flash","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":50,"outputPriceCredits":300,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"unknown","vision":true,"toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"inferred"}},{"model":"gemini-3-pro","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":200,"outputPriceCredits":1200,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"registry"}},{"model":"gemini-3.1-pro","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":200,"outputPriceCredits":1200,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"unknown","vision":true,"toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"inferred"}},{"model":"gemini-3.6-flash","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":75,"outputPriceCredits":375,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":true,"audioOutput":false,"pdfInput":true,"responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"maxInputTokens":1048576,"maxOutputTokens":65536,"source":"registry"}},{"model":"deepseek-v3.2","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":28,"outputPriceCredits":42,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"unknown","vision":"unknown","toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"none"}},{"model":"glm-4.5v","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":60,"outputPriceCredits":180,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":false,"thinking":false,"audioInput":false,"audioOutput":false,"pdfInput":false,"responseJsonObject":true,"responseSchema":true,"promptCaching":"unknown","systemMessages":true,"source":"registry"}},{"model":"glm-4.6v","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":30,"outputPriceCredits":90,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"registry"}},{"model":"doubao-seed-2.0-code","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":44,"outputPriceCredits":222,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":false,"responseSchema":false,"promptCaching":true,"systemMessages":true,"source":"registry"}},{"model":"doubao-seed-2.0-lite","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":8,"outputPriceCredits":50,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":false,"audioOutput":false,"pdfInput":"unknown","responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"source":"registry"}},{"model":"doubao-seed-2.0-pro","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":44,"outputPriceCredits":222,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":false,"responseSchema":false,"promptCaching":true,"systemMessages":true,"source":"registry"}},{"model":"doubao-seed-2.1-pro","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":83,"outputPriceCredits":417,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"source":"registry"}},{"model":"doubao-seed-2.1-turbo","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":50,"outputPriceCredits":220,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":true,"responseSchema":true,"promptCaching":true,"systemMessages":true,"source":"registry"}},{"model":"gemma-4-26b-a4b-it","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":0,"outputPriceCredits":0,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":true,"maxInputTokens":256000,"source":"registry"}},{"model":"gemma-4-31b-it","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":0,"outputPriceCredits":0,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":true,"maxInputTokens":256000,"source":"registry"}},{"model":"minimax-01","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":200,"outputPriceCredits":1100,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"unknown","vision":"unknown","toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"none"}},{"model":"minimax-text-01","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":200,"outputPriceCredits":1100,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":"unknown","toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"registry"}},{"model":"ox-alpha","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":60,"outputPriceCredits":220,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":true,"toolCall":true,"reasoning":true,"thinking":true,"audioInput":false,"audioOutput":false,"pdfInput":"unknown","responseJsonObject":true,"responseSchema":false,"promptCaching":"unknown","systemMessages":"unknown","maxInputTokens":1048576,"maxOutputTokens":131072,"source":"registry"}},{"model":"qwen3.7-max-preview","availability":"needs_supply","pricing":{"pricingType":"token","inputPriceCredits":100,"outputPriceCredits":300,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"unknown","vision":"unknown","toolCall":"unknown","reasoning":"unknown","thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":"unknown","source":"none"}},{"model":"qwen3.8-flash","availability":"verifying","pricing":{"pricingType":"token","inputPriceCredits":15,"outputPriceCredits":47,"perCallPriceCredits":0,"perCallPricingTable":null,"imageTokenPricing":null,"officialInputPrice":null,"officialOutputPrice":null},"capabilities":{"mode":"chat","vision":"unknown","toolCall":true,"reasoning":true,"thinking":"unknown","audioInput":"unknown","audioOutput":"unknown","pdfInput":"unknown","responseJsonObject":"unknown","responseSchema":"unknown","promptCaching":"unknown","systemMessages":true,"maxInputTokens":262144,"source":"registry"}}]}</script>
 <script>
+
 'use strict';
 const calc = (() => {
 const FX = 7.2;                                // 固定汇率：1 USD = 7.2 CNY
@@ -259,6 +564,20 @@ function toast(msg) {
   clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 2200);
 }
 
+function openPaste() { $('paste-panel').classList.remove('hidden'); }
+function closePaste() { $('paste-panel').classList.add('hidden'); }
+
+const LS_THEME = 'tokenbom_theme';
+function applyTheme(mode) {
+  document.documentElement.classList.toggle('dark', mode === 'dark');
+  try { localStorage.setItem(LS_THEME, mode); } catch (e) {}
+}
+function toggleTheme() {
+  const dark = document.documentElement.classList.contains('dark');
+  applyTheme(dark ? 'light' : 'dark');
+  toast(dark ? '已切换到浅色主题' : '已切换到深色主题');
+}
+
 /* ---------- 数据装载 ---------- */
 function setData(models, fetchedAt, source) {
   state.models = models; state.fetchedAt = fetchedAt; state.source = source;
@@ -293,7 +612,7 @@ async function tryFetch() {
     setData(models, new Date().toISOString(), '在线拉取');
     toast('已更新：' + models.length + ' 个模型');
   } catch (e) {
-    $('paste-panel').classList.remove('hidden');
+    openPaste();
     toast('跨域被拦截，请用手动更新流程');
   }
 }
@@ -309,7 +628,7 @@ function parsePasted(text) {
     if (!first.model || !first.pricing) throw new Error('数据结构与预期不符（缺少 model/pricing 字段）');
     setData(models, new Date().toISOString(), '手动粘贴');
     toast('已更新：' + models.length + ' 个模型');
-    $('paste-panel').classList.add('hidden');
+    closePaste();
     $('paste-box').value = '';
   } catch (e) {
     err.textContent = '解析失败：' + e.message;
@@ -355,36 +674,38 @@ function chipsOf(m) {
 }
 
 function availBadge(m) {
-  const map = { available: ['b-avail', '可用'], needs_supply: ['b-supply', '缺供应'], verifying: ['b-verifying', '验证中'] };
-  const [cls, label] = map[m.availability] || ['b-verifying', m.availability];
+  const map = { available: ['badge-avail', '可用'], needs_supply: ['badge-supply', '缺供应'], verifying: ['badge-verifying', '验证中'] };
+  const [cls, label] = map[m.availability] || ['badge-verifying', m.availability];
   return '<span class="badge ' + cls + '">' + label + '</span>';
 }
 
 function renderTable() {
   const list = filtered();
-  $('count').textContent = '显示 ' + list.length + ' / ' + state.models.length + ' 个模型（按 token 计费）';
+  $('count').textContent = '显示 ' + list.length + ' 个模型';
   const rows = list.map((m, i) => {
     const d = derived(m, state.cfg);
     let delta;
     if (state.cfg.currentSpend <= 0) delta = '<span class="delta-zero">—</span>';
-    else if (Math.abs(d.vs) < 0.005) delta = '<span class="delta-zero">≈ 你的现状</span>';
+    else if (Math.abs(d.vs) < 0.005) delta = '<span class="delta-zero">≈ 当前</span>';
     else {
       const cls = d.vs < 0 ? 'delta-neg' : 'delta-pos';
       delta = '<span class="' + cls + '">' + calc.deltaPercent(d.vs) + '%</span>';
     }
-    const sunset = m.sunset ? '<span class="badge b-sunset" title="被 ' + esc(m.sunset.replacedBy || '') + ' 接替">下线 ' + esc((m.sunset.sunsetAt || '').slice(0, 10)) + '</span>' : '';
+    const ctx = m.capabilities && m.capabilities.maxInputTokens ? fmtTok(m.capabilities.maxInputTokens) : '—';
+    const sunset = m.sunset ? '<span class="badge badge-sunset" title="被 ' + esc(m.sunset.replacedBy || '') + ' 接替">下线 ' + esc((m.sunset.sunsetAt || '').slice(0, 10)) + '</span>' : '';
     return '<tr>' +
       '<td class="l muted">' + (i + 1) + '</td>' +
-      '<td class="l"><span class="mname">' + esc(m.model) + '</span>' + availBadge(m) + sunset + '</td>' +
+      '<td class="l"><span class="mname">' + esc(m.model) + '</span><div class="mnote">' + chipsOf(m) + '</div></td>' +
       '<td title="' + esc(m.pricing.inputPriceCredits) + ' 积分/M">¥' + fmtPrice(d.inCny) + '</td>' +
       '<td title="' + esc(m.pricing.outputPriceCredits) + ' 积分/M">¥' + fmtPrice(d.outCny) + '</td>' +
       '<td>¥' + fmtPrice(d.blended) + '</td>' +
       '<td><b>' + fmtCNY(d.monthly) + '</b></td>' +
       '<td>' + delta + '</td>' +
-      '<td class="l"><span class="chips">' + chipsOf(m) + '</span></td>' +
+      '<td class="muted">' + ctx + '</td>' +
+      '<td>' + availBadge(m) + sunset + '</td>' +
       '</tr>';
   }).join('');
-  $('tbody').innerHTML = rows || '<tr><td colspan="8" class="l muted">没有符合条件的模型</td></tr>';
+  $('tbody').innerHTML = rows || '<tr><td colspan="9" class="l muted">没有符合条件的模型</td></tr>';
 
   document.querySelectorAll('thead th.sortable').forEach(th => {
     const arrow = th.querySelector('.arrow');
@@ -392,21 +713,30 @@ function renderTable() {
   });
 }
 
-function renderStats() {
+function renderKpis() {
   const c = state.cfg;
-  const creditCny = calc.creditCnyOf(c.creditPrice);
   const { tIn, tOut } = calc.splitUsage(c.monthlyTokens);
-  let anchor = '';
-  const ref = state.models.find(m => /opus-5/.test(m.model));
-  if (ref) {
-    const d = derived(ref, c);
-    anchor = '<span>同款 opus-5 月成本：<b>' + fmtCNY(d.monthly) + '</b>（混合 ¥' + fmtPrice(d.blended) + '/M）</span>';
+  $('kpi-usage').textContent = fmtNum(c.monthlyTokens, 1) + 'M';
+  $('kpi-usage-sub').textContent = 'tokens / 月（4:1 → ' + fmtNum(tIn, 1) + 'M 入 + ' + fmtNum(tOut, 1) + 'M 出）';
+  $('kpi-spend').textContent = fmtCNY(c.currentSpend);
+  $('banner-sub').textContent = '覆盖 ' + state.models.length + ' 个主流 AI 模型的实时定价对比，按预估月度成本排序。数据基于 ' +
+    fmtNum(c.monthlyTokens, 1) + 'M tokens/月，输入输出 4:1 配比。';
+
+  const list = filtered();
+  if (!list.length || c.monthlyTokens <= 0) {
+    $('kpi-min').textContent = '—'; $('kpi-min-sub').textContent = '—';
+    $('kpi-max').textContent = '—'; $('kpi-max-sub').textContent = '—';
+    return;
   }
-  $('stats').innerHTML =
-    '<span>月用量（4:1 拆分）：<b>' + fmtNum(tIn, 1) + 'M 输入</b> + <b>' + fmtNum(tOut, 1) + 'M 输出</b> tokens</span>' +
-    '<span>积分购买价：<b>¥' + creditCny.toFixed(4) + '/积分</b>（¥' + c.creditPrice + '/100积分，汇率固定 7.2）</span>' +
-    '<span>现行月花费：<b>' + fmtCNY(c.currentSpend) + '</b></span>' +
-    anchor;
+  const priced = list.map(m => ({ m, d: derived(m, c) }));
+  const min = priced.reduce((a, b) => (b.d.monthly < a.d.monthly ? b : a));
+  const max = priced.reduce((a, b) => (b.d.monthly > a.d.monthly ? b : a));
+  const pctOf = d => c.currentSpend > 0 ? Math.abs(d.monthly / c.currentSpend - 1) * 100 : null;
+  const minPct = pctOf(min.d), maxPct = pctOf(max.d);
+  $('kpi-min').textContent = fmtCNY(min.d.monthly);
+  $('kpi-min-sub').innerHTML = esc(min.m.model) + (minPct != null ? ' · 节省 <b>' + fmtNum(minPct, 1) + '%</b>' : '');
+  $('kpi-max').textContent = fmtCNY(max.d.monthly);
+  $('kpi-max-sub').innerHTML = esc(max.m.model) + (maxPct != null ? ' · <span class="up">溢价 ' + fmtNum(maxPct, 1) + '%</span>' : '');
 }
 
 function renderPerCall() {
@@ -414,34 +744,45 @@ function renderPerCall() {
   const sec = $('percall');
   if (!pcs.length) { sec.classList.add('hidden'); return; }
   sec.classList.remove('hidden');
-  const c = state.cfg;
-  const creditCny = calc.creditCnyOf(c.creditPrice);
-  $('percall-body').innerHTML = pcs.map(m => {
+  const creditCny = calc.creditCnyOf(state.cfg.creditPrice);
+  const rows = [];
+  pcs.forEach(m => {
     const p = m.pricing;
-    let tbl = '';
     if (p.perCallPricingTable) {
-      const rows = Object.entries(p.perCallPricingTable)
+      Object.entries(p.perCallPricingTable)
         .sort((a, b) => a[0].localeCompare(b[0]))
-        .map(([k, v]) => '<tr><td>' + esc(k) + '</td><td>¥' + fmtPrice(v * creditCny) + '</td></tr>').join('');
-      tbl = '<table class="pc-table"><tr><th>质量:尺寸</th><th>单价/次</th></tr>' + rows + '</table>';
+        .forEach(([k, v]) => {
+          const parts = k.split(':');
+          rows.push('<tr>' +
+            '<td class="l"><span class="mname">' + esc(m.model) + '</span></td>' +
+            '<td>' + esc(parts[0] || '—') + '</td>' +
+            '<td>' + esc(parts[1] || '—') + '</td>' +
+            '<td>¥' + fmtPrice(v * creditCny) + '</td>' +
+            '<td>' + availBadge(m) + '</td>' +
+            '</tr>');
+        });
     }
-    let img = '';
     if (p.imageTokenPricing) {
       const ip = p.imageTokenPricing;
-      img = '<div class="muted" style="margin:4px 0 8px 12px">token 计费：文本输入 ¥' + fmtPrice((ip.textInputCredits || 0) * creditCny) +
-        ' / 图片输入 ¥' + fmtPrice((ip.imageInputCredits || 0) * creditCny) +
-        ' / 图片输出 ¥' + fmtPrice((ip.imageOutputCredits || 0) * creditCny) + ' 每百万 token</div>';
+      rows.push('<tr>' +
+        '<td class="l"><span class="mname">' + esc(m.model) + '</span><div class="mnote"><span class="chip">图像 token 计费</span></div></td>' +
+        '<td colspan="2" class="l muted" style="white-space:normal">文本 ¥' + fmtPrice((ip.textInputCredits || 0) * creditCny) +
+        ' / 图入 ¥' + fmtPrice((ip.imageInputCredits || 0) * creditCny) + ' / 图出 ¥' + fmtPrice((ip.imageOutputCredits || 0) * creditCny) + ' 每百万</td>' +
+        '<td>—</td><td>' + availBadge(m) + '</td>' +
+        '</tr>');
     }
-    return '<div class="pc-model">' + esc(m.model) + ' ' + availBadge(m) + '</div>' + tbl + img;
-  }).join('');
+  });
+  $('percall-body').innerHTML = '<table class="pc-table"><thead><tr>' +
+    '<th class="l">模型</th><th>质量</th><th>尺寸</th><th>单价 (¥)</th><th>状态</th>' +
+    '</tr></thead><tbody>' + (rows.join('') || '<tr><td colspan="5" class="l muted">无</td></tr>') + '</tbody></table>';
 }
 
 function renderStatus() {
   const when = state.fetchedAt ? new Date(state.fetchedAt).toLocaleString('zh-CN', { hour12: false }) : '未知时间';
-  $('data-status').textContent = '数据来源：' + state.source + ' · v' + VERSION + ' · ' + when + ' · 共 ' + state.models.length + ' 个模型';
+  $('data-status').textContent = '来源：' + state.source + ' · ' + when + ' · 共 ' + state.models.length + ' 个模型 · v' + VERSION;
 }
 
-function renderAll() { renderStats(); renderTable(); renderPerCall(); renderStatus(); renderAssumptions(); }
+function renderAll() { renderKpis(); renderTable(); renderPerCall(); renderStatus(); renderAssumptions(); }
 
 function renderAssumptions() {
   const c = state.cfg;
@@ -534,10 +875,28 @@ function bindRest() {
       else state.sort = { key: k, dir: k === 'model' ? 'asc' : 'asc' };
       renderTable();
     }));
-  $('search').addEventListener('input', e => { state.search = e.target.value.trim(); renderTable(); });
-  $('avail').addEventListener('change', e => { state.avail = e.target.value; renderTable(); });
-  $('hidesunset').addEventListener('change', e => { state.hideSunset = e.target.checked; renderTable(); });
+  $('search').addEventListener('input', e => { state.search = e.target.value.trim(); renderTable(); renderKpis(); });
+  document.querySelectorAll('#avail-tabs .tab').forEach(tab =>
+    tab.addEventListener('click', () => {
+      state.avail = tab.dataset.avail;
+      document.querySelectorAll('#avail-tabs .tab').forEach(t => {
+        const on = t === tab;
+        t.classList.toggle('active', on);
+        t.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+      renderTable(); renderKpis();
+    }));
+  $('hidesunset').addEventListener('change', e => { state.hideSunset = e.target.checked; renderTable(); renderKpis(); });
   $('btn-refresh').addEventListener('click', tryFetch);
+  $('btn-refresh-side').addEventListener('click', tryFetch);
+  $('btn-theme').addEventListener('click', toggleTheme);
+  $('btn-paste').addEventListener('click', openPaste);
+  $('btn-paste-close').addEventListener('click', closePaste);
+  $('paste-panel').addEventListener('click', e => { if (e.target === $('paste-panel')) closePaste(); });
+  document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) { e.preventDefault(); $('search').focus(); }
+    if (e.key === 'Escape') closePaste();
+  });
   $('btn-csv').addEventListener('click', downloadCSV);
   $('btn-md').addEventListener('click', copyMarkdown);
   $('btn-reset').addEventListener('click', () => {
@@ -551,9 +910,9 @@ function bindRest() {
       else toast('剪贴板是空的');
     } catch (e) { toast('无法读剪贴板，请 Ctrl+V 粘贴到输入框'); $('paste-box').focus(); }
   });
-  $('btn-restore').addEventListener('click', () => {
-    loadEmbedded(); $('paste-panel').classList.add('hidden'); toast('已恢复内嵌快照');
-  });
+  const restoreSnap = () => { loadEmbedded(); closePaste(); toast('已恢复内嵌快照'); };
+  $('btn-restore').addEventListener('click', restoreSnap);
+  $('btn-snapshot').addEventListener('click', restoreSnap);
   $('open-api').href = API_URL;
 }
 function bindParamsValues() {
@@ -567,6 +926,7 @@ loadCfg();
 bindParams();
 bindRest();
 if (!loadLocal()) loadEmbedded();
+
 </script>
 </body>
 </html>
